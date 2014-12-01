@@ -6,6 +6,6 @@ cd bin
 cmake -G <generator> ..
 ```
 Vous pouvez utiliser (entre autres) les valeurs suivantes pour le `generator`:
-* `"CodeBlocks"` pour un projet Code::Blocks ;
+* `"CodeBlocks - Unix Makefiles"` pour un projet Code::Blocks sous Linux ;
 * `"Xcode"` pour un projet Xcode ;
 * `"Unix Makefiles"` pour des classiques Unix Makefiles.
