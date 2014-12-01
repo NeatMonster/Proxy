@@ -5,6 +5,7 @@
 
 #include <stdexcept>
 #include <netinet/in.h>
+#include <cstring>
 
 #define INVALID_HANDLE -1
 
@@ -35,7 +36,7 @@ public:
     };
 
     struct SocketException : public std::runtime_error {
-        SocketException(int code) : std::runtime_error(strerror(code)) {}
+        SocketException(int code) : std::runtime_error(std::strerror(code)) {}
     };
 
     struct SocketCloseException : public SocketException {
