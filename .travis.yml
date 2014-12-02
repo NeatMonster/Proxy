@@ -1,5 +1,5 @@
 language: cpp
-compiler: gcc
+compiler: clang
 
 before_install:
  - echo "yes" | sudo add-apt-repository ppa:kalakris/cmake
