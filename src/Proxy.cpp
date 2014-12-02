@@ -31,7 +31,7 @@ void Proxy::run() {
             try {
                 ClientSocket *clientSocket = socket->accept();
                 Logger::info() << "/" << clientSocket->getIP() << ":" <<
-                    clientSocket->getPort() << " s'est connecté." << std::endl;
+                    clientSocket->getPort() << " s'est connecté" << std::endl;
                 connects.push_back(new PlayerConnection(clientSocket));
             } catch (const ServerSocket::SocketAcceptException &e) {}
         }

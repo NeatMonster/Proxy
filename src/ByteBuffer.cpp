@@ -70,7 +70,7 @@ void ByteBuffer::getUInt(uint_t &i) {
     std::memcpy(&i, bs, 4);
 }
 
-void ByteBuffer::getVarInt(uint_t &x) {
+void ByteBuffer::getVarInt(varint_t &x) {
     x = 0;
     ubyte_t b = 0;
     int shift = 0;
@@ -184,7 +184,7 @@ void ByteBuffer::putUInt(uint_t i) {
     put(bs, 4);
 }
 
-void ByteBuffer::putVarInt(uint_t x) {
+void ByteBuffer::putVarInt(varint_t x) {
     size_t size = ::getSize(x);
     ubyte_t bs[5];
     for (size_t i = 0; i < size; i++) {

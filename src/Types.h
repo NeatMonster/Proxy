@@ -19,6 +19,7 @@ typedef std::int16_t short_t;
 typedef std::uint16_t ushort_t;
 typedef std::int32_t int_t;
 typedef std::uint32_t uint_t;
+typedef std::uint32_t varint_t;
 typedef std::int64_t long_t;
 typedef std::uint64_t ulong_t;
 typedef float float_t;

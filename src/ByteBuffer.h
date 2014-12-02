@@ -35,7 +35,7 @@ public:
 
     void getUInt(uint_t&);
 
-    void getVarInt(uint_t&);
+    void getVarInt(varint_t&);
 
     void getLong(long_t&);
 
@@ -69,7 +69,7 @@ public:
 
     void putUInt(uint_t);
 
-    void putVarInt(uint_t);
+    void putVarInt(varint_t);
 
     void putLong(long_t);
 
