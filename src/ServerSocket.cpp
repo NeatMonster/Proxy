@@ -38,7 +38,6 @@ void ServerSocket::open() {
 }
 
 ClientSocket *ServerSocket::accept() {
-
     socklen_t size = address.getSize();
     int newHandle = ::accept(handle, address.getAddress(), &size);
     if (newHandle == -1) {

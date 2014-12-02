@@ -12,6 +12,11 @@ Proxy::Proxy() {
     run();
 }
 
+Proxy::~Proxy() {
+    for (PlayerConnection *connect : connects)
+        delete connect;
+}
+
 void Proxy::run() {
     // Pour l'instant, on affiche simplement les clients qui se connectent.
     string_t ip = "127.0.0.1";
@@ -21,9 +26,12 @@ void Proxy::run() {
         socket->open();
         Logger::info() << "Démarrage du Proxy sur " << ip << ":" << port << std::endl;
         while (true) {
-            ClientSocket *clientSocket = socket->accept();
-            Logger::info() << "/" << clientSocket->getIP() << ":" <<
-                clientSocket->getPort() << " s'est connecté." << std::endl;
+            try {
+                ClientSocket *clientSocket = socket->accept();
+                Logger::info() << "/" << clientSocket->getIP() << ":" <<
+                    clientSocket->getPort() << " s'est connecté." << std::endl;
+                connects.push_back(new PlayerConnection(clientSocket));
+            } catch (const ServerSocket::SocketAcceptException &e) {}
         }
     } catch (const ServerSocket::SocketBindException &e) {
         Logger::warning() << "IMPOSSIBLE DE SE LIER À L'IP ET AU PORT !" << std::endl;
