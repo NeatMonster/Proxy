@@ -29,7 +29,7 @@ struct InvalidArgumentException : std::runtime_error {
     InvalidArgumentException(string_t s) : std::runtime_error(s) {}
 };
 
-size_t getSize(uint_t i) {
+inline size_t getSize(uint_t i) {
     if (i < 128)
         return 1;
     else if (i < 16384)

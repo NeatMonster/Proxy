@@ -44,6 +44,10 @@ public:
         SocketCloseException(int code) : SocketException(code) {}
     };
 
+    struct SocketFcntlException : public SocketException {
+        SocketFcntlException(int code) : SocketException(code) {}
+    };
+
     Socket(SocketAddress);
 
     virtual ~Socket();

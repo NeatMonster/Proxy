@@ -58,7 +58,7 @@ void Socket::makeNonBlocking() {
     result = ::fcntl(handle, F_SETFL, flags | O_NONBLOCK);
     if (result < 0) {
         blocking = true;
-        throw SocketException(errno);
+        throw SocketFcntlException(errno);
     } else
         blocking = false;
 }

@@ -13,8 +13,10 @@ Proxy::Proxy() {
 }
 
 Proxy::~Proxy() {
-    for (PlayerConnection *connect : connects)
+    for (PlayerConnection *connect : connects) {
+        connect->close();
         delete connect;
+    }
 }
 
 void Proxy::run() {
