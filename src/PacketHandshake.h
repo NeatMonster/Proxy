@@ -13,6 +13,8 @@ public:
     PacketHandshake();
 
     void read(ByteBuffer&);
+
+    void handle(PacketHandler*);
 };
 
 #endif /* defined(__Proxy__PacketHandshake__) */

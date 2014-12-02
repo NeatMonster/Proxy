@@ -7,9 +7,11 @@
 PlayerConnection::PlayerConnection(ClientSocket *socket) : socket(socket), closed(false) {
     readThread = std::thread(&PlayerConnection::runRead, this);
     writeThread = std::thread(&PlayerConnection::writeThread, this);
+    handler = new PacketHandler(this);
 }
 
 PlayerConnection::~PlayerConnection() {
+    delete handler;
     delete socket;
 }
 
@@ -44,9 +46,9 @@ void PlayerConnection::runRead() {
                         if (factories[phase].hasPacket(packetId)) {
                             ClientPacket *readPacket = factories[phase].createPacket(packetId);
                             readPacket->read(readBuffer);
-                            // Pour l'instant, on se contente d'afficher le nom du paquet.
                             Logger::info() << "/" << socket->getIP() << ":" << socket->getPort()
                                 << " a envoyé un paquet " << typeid(*readPacket).name() << std::endl;
+                            readPacket->handle(handler);
                             delete readPacket;
                             readBuffer.compact();
                         } else {

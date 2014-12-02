@@ -1,12 +1,15 @@
 #include "PacketFactory.h"
 
 #include "PacketHandshake.h"
+#include "PacketRequest.h"
 
 PacketFactory::PacketFactory(Phase phase) {
     switch (phase) {
         case HANDSHAKE:
             registerPacket<PacketHandshake>(0x00);
             break;
+        case STATUS:
+            registerPacket<PacketRequest>(0x00);
         default:
             break;
     }

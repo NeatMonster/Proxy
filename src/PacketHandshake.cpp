@@ -8,3 +8,7 @@ void PacketHandshake::read(ByteBuffer &buffer) {
     buffer.getUShort(serverPort);
     buffer.getVarInt(nextState);
 }
+
+void PacketHandshake::handle(PacketHandler *handler) {
+    handler->handleHandshake(this);
+}

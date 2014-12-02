@@ -10,6 +10,8 @@
 #include <map>
 
 class PlayerConnection {
+    friend class PacketHandler;
+
 public:
     PlayerConnection(ClientSocket*);
 
@@ -31,6 +33,7 @@ private:
     std::thread writeThread;
     ByteBuffer readBuffer;
     ByteBuffer writeBuffer;
+    PacketHandler *handler;
     std::atomic<bool> closed;
     std::atomic<PacketFactory::Phase> phase;
 };
