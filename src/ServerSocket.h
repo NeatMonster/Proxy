@@ -7,23 +7,23 @@
 class ServerSocket : public Socket {
 public:
     struct SocketAcceptException : public SocketException {
-        SocketAcceptException(int code) : SocketException(code) {};
+        SocketAcceptException(int code) : SocketException(code) {}
     };
 
     struct SocketBindException : public SocketException {
-        SocketBindException(int code) : SocketException(code) {};
+        SocketBindException(int code) : SocketException(code) {}
     };
 
     struct SocketCreateException : public SocketException {
-        SocketCreateException(int code) : SocketException(code) {};
+        SocketCreateException(int code) : SocketException(code) {}
     };
 
     struct SocketListenException : public SocketException {
-        SocketListenException(int code) : SocketException(code) {};
+        SocketListenException(int code) : SocketException(code) {}
     };
 
     struct SocketSetSockOptException : public SocketException {
-        SocketSetSockOptException(int code) : SocketException(code) {};
+        SocketSetSockOptException(int code) : SocketException(code) {}
     };
 
     ServerSocket(SocketAddress);

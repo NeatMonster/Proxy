@@ -1,9 +1,9 @@
 #include "ServerSocket.h"
 
 #include <errno.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <unistd.h>
 
 #define MAX_PENDING 5
 

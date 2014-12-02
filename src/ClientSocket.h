@@ -6,11 +6,11 @@
 class ClientSocket : public Socket {
 public:
     struct SocketReadException : public SocketException {
-        SocketReadException(int code) : SocketException(code) {};
+        SocketReadException(int code) : SocketException(code) {}
     };
 
     struct SocketWriteException : public SocketException {
-        SocketWriteException(int code) : SocketException(code) {};
+        SocketWriteException(int code) : SocketException(code) {}
     };
 
     ClientSocket(int, SocketAddress);
@@ -19,18 +19,18 @@ public:
 
     virtual void open();
 
-    virtual int transmit(char*, int);
+    virtual size_t transmit(ubyte_t*, size_t);
 
-    virtual int receive(char*, int);
+    virtual size_t receive(ubyte_t*, size_t);
 
     string_t getIP();
 
     ushort_t getPort();
 
 private:
-    char readBuffer[4096];
-    char* readPointer;
-    size_t dataLength;
+    ubyte_t readBuffer[4096];
+    ubyte_t* readPointer;
+    int dataLength;
 };
 
 #endif /* defined(__Proxy__ClientSocket__) */

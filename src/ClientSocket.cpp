@@ -17,14 +17,12 @@ ClientSocket::~ClientSocket() {
 
 void ClientSocket::open() {}
 
-int ClientSocket::transmit(char *buffer, int size) {
+size_t ClientSocket::transmit(ubyte_t *buffer, size_t size) {
     if (buffer == nullptr)
         throw InvalidArgumentException("Buffer invalide.");
-    else if (size < 0)
-        throw new InvalidArgumentException("Taille invalide.");
     else if (size == 0)
         return 0;
-    int count = (int) ::send(handle, buffer, size, MSG_NOSIGNAL);
+    int count = ::send(handle, buffer, size, MSG_NOSIGNAL);
     if (count < 0) {
         if (errno == EWOULDBLOCK)
             return 0;
@@ -34,16 +32,16 @@ int ClientSocket::transmit(char *buffer, int size) {
     return count;
 }
 
-int ClientSocket::receive(char *buffer, int size) {
+size_t ClientSocket::receive(ubyte_t *buffer, size_t size) {
     if (dataLength <= 0) {
         readPointer = readBuffer;
-        dataLength = (int) recv(handle, readBuffer, sizeof(readBuffer), MSG_NOSIGNAL);
+        dataLength = ::recv(handle, readBuffer, sizeof(readBuffer), MSG_NOSIGNAL);
         if (dataLength <= 0) {
             if (errno != EWOULDBLOCK)
                 throw SocketReadException(errno);
         }
     }
-    if (dataLength < size)
+    if (dataLength < (int) size)
         size = dataLength;
     int remaining = size;
     while (remaining > 0) {

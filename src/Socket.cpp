@@ -1,11 +1,10 @@
 #include "Socket.h"
 
-#include <arpa/inet.h>
-#include <cstring>
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/socket.h>
 #include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 
 Socket::SocketAddress::SocketAddress(string_t ip, ushort_t port) {
     std::memset(&address, 0, sizeof(address));

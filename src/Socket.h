@@ -3,6 +3,7 @@
 
 #include "Types.h"
 
+#include <cstring>
 #include <stdexcept>
 #include <netinet/in.h>
 
@@ -35,11 +36,11 @@ public:
     };
 
     struct SocketException : public std::runtime_error {
-        SocketException(int code) : std::runtime_error(strerror(code)) {}
+        SocketException(int code) : std::runtime_error(std::strerror(code)) {}
     };
 
     struct SocketCloseException : public SocketException {
-        SocketCloseException(int code) : SocketException(code) {};
+        SocketCloseException(int code) : SocketException(code) {}
     };
 
     Socket(SocketAddress);

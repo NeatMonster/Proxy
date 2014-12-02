@@ -2,7 +2,7 @@
 
 #include "ServerSocket.h"
 
-int main(int argc, const char *argv[]) {
+int main(void) {
     new Proxy();
     return 0;
 }
