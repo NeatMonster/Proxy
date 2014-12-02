@@ -4,6 +4,6 @@ compiler: clang
 before_install:
  - echo "yes" | sudo add-apt-repository ppa:kalakris/cmake
  - sudo apt-get update -qq
- - sudo apt-get install cmake
+ - sudo apt-get install cmake gcc-4.8 g++-4.8
 
 script: mkdir build && cd build && cmake ../ && make
