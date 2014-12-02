@@ -6,6 +6,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <netinet/in.h>
+#include <cstring>
 
 #define INVALID_HANDLE -1
 
