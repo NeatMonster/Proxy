@@ -1,8 +1,9 @@
 #include "Proxy.h"
 
+#include "Logger.h"
 #include "ServerSocket.h"
 
-int main(void) {
+int main() {
     new Proxy();
     return 0;
 }
@@ -13,14 +14,20 @@ Proxy::Proxy() {
 
 void Proxy::run() {
     // Pour l'instant, on affiche simplement les clients qui se connectent.
+    string_t ip = "127.0.0.1";
+    ushort port = 25565;
     try {
-        ServerSocket *socket = new ServerSocket(Socket::SocketAddress("127.0.0.1", 25565));
+        ServerSocket *socket = new ServerSocket(Socket::SocketAddress(ip, port));
         socket->open();
+        Logger::info() << "Démarrage du Proxy sur " << ip << ":" << port << std::endl;
         while (true) {
             ClientSocket *clientSocket = socket->accept();
-            std::cout << "/" << clientSocket->getIP() << ":" << clientSocket->getPort() << " s'est connecté." << std::endl;
+            Logger::info() << "/" << clientSocket->getIP() << ":" <<
+                clientSocket->getPort() << " s'est connecté." << std::endl;
         }
     } catch (const ServerSocket::SocketBindException &e) {
-        std::cout << "Le port 25565 est déjà occupé." << std::endl;
+        Logger::warning() << "IMPOSSIBLE DE SE LIER À L'IP ET AU PORT !" << std::endl;
+        Logger::warning() << "L'erreur rencontrée est : " << e.what() << std::endl;
+        Logger::warning() << "Peut-être qu'un serveur occupe déjà ce port ?" << std::endl;
     }
 }
