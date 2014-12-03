@@ -30,7 +30,10 @@ struct InvalidArgumentException : std::runtime_error {
 
 template<class T>
 inline bool contains(T x, std::vector<T> vec) {
-    return std::find(vec.begin(), vec.end(), x) != vec.end();
+    for (T y : vec)
+        if (x == y)
+            return true;
+    return false;
 }
 
 inline size_t getSize(uint_t i) {
