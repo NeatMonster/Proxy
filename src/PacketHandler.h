@@ -2,6 +2,7 @@
 #define __Proxy__PacketHandler__
 
 class PacketHandshake;
+class PacketPing;
 class PacketRequest;
 class PlayerConnection;
 
@@ -12,6 +13,8 @@ public:
     void handleHandshake(PacketHandshake*);
 
     void handleRequest(PacketRequest*);
+
+    void handlePing(PacketPing*);
 
 private:
     PlayerConnection *connect;

@@ -1,9 +1,7 @@
 #ifndef __Proxy__Proxy__
 #define __Proxy__Proxy__
 
-#include "PlayerConnection.h"
-
-#include <vector>
+#include "NetworkManager.h"
 
 class Proxy {
 public:
@@ -12,7 +10,7 @@ public:
     ~Proxy();
 
 private:
-    std::vector<PlayerConnection*> connects;
+    NetworkManager *network;
 
     void run();
 };

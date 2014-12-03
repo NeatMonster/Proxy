@@ -1,12 +1,14 @@
 #include "PlayerConnection.h"
 
 #include "Logger.h"
+#include "PacketHandshake.h"
+#include "PacketPing.h"
+#include "PacketRequest.h"
 
 #include <typeinfo>
 
 PlayerConnection::PlayerConnection(ClientSocket *socket) : socket(socket), closed(false) {
-    readThread = std::thread(&PlayerConnection::runRead, this);
-    writeThread = std::thread(&PlayerConnection::writeThread, this);
+    thread = std::thread(&PlayerConnection::run, this);
     handler = new PacketHandler(this);
 }
 
@@ -28,7 +30,7 @@ bool PlayerConnection::isClosed() {
     return closed;
 }
 
-void PlayerConnection::runRead() {
+void PlayerConnection::run() {
     try {
         ubyte_t buffer[BUFFER_SIZE];
         while (!closed) {
@@ -43,17 +45,31 @@ void PlayerConnection::runRead() {
                     if (readBuffer.getLimit() - readBuffer.getPosition() >= packetLength) {
                         varint_t packetId;
                         readBuffer.getVarInt(packetId);
-                        if (factories[phase].hasPacket(packetId)) {
-                            ClientPacket *readPacket = factories[phase].createPacket(packetId);
-                            readPacket->read(readBuffer);
-                            Logger::info() << "/" << socket->getIP() << ":" << socket->getPort()
-                                << " a envoyé un paquet " << typeid(*readPacket).name() << std::endl;
-                            readPacket->handle(handler);
-                            delete readPacket;
-                            readBuffer.compact();
-                        } else {
+                        ClientPacket *packet = nullptr;
+                        switch (phase.load()) {
+                            case HANDSHAKE:
+                                if (packetId == 0x00)
+                                    packet = new PacketHandshake();
+                                break;
+                            case STATUS:
+                                if (packetId == 0x00)
+                                    packet = new PacketRequest();
+                                else if (packetId == 0x01)
+                                    packet = new PacketPing();
+                                break;
+                            default:
+                                break;
+                        }
+                        if (packet == nullptr) {
                             Logger::warning() << packetId << " n'est pas ID de paquet valide" << std::endl;
                             break;
+                        } else {
+                            packet->read(readBuffer);
+                            Logger::info() << "/" << socket->getIP() << ":" << socket->getPort()
+                            << " a envoyé un paquet " << typeid(*packet).name() << std::endl;
+                            packet->handle(handler);
+                            delete packet;
+                            readBuffer.compact();
                         }
                     } else
                         break;
@@ -66,18 +82,24 @@ void PlayerConnection::runRead() {
     }
 }
 
-void PlayerConnection::runWrite() {
+void PlayerConnection::sendPacket(ServerPacket *packet) {
     try {
-        // Rien à faire pour le moment.
+        if (!closed) {
+            writeBuffer.clear();
+            writeBuffer.putVarInt(packet->getPacketId());
+            packet->write(writeBuffer);
+            Logger::info() << "/" << socket->getIP() << ":" << socket->getPort()
+                << " a reçu un paquet " << typeid(*packet).name() << std::endl;
+            varint_t packetLength = writeBuffer.getLimit();
+            writeBuffer.shift(getSize(packetLength));
+            writeBuffer.rewind();
+            writeBuffer.putVarInt(packetLength);
+            writeBuffer.rewind();
+            socket->transmit(writeBuffer.getData(), writeBuffer.getLimit());
+        }
     } catch (const ClientSocket::SocketWriteException &e) {
+        std::cout<< e.what() << std::endl;
         Logger::info() << "/" << socket->getIP() << ":" << socket->getPort() << " s'est déconnecté" << std::endl;
         close();
     }
 }
-
-PacketFactory PlayerConnection::factories[4] = {
-    PacketFactory(PacketFactory::HANDSHAKE),
-    PacketFactory(PacketFactory::STATUS),
-    PacketFactory(PacketFactory::LOGIN),
-    PacketFactory(PacketFactory::PLAY)
-};

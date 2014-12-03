@@ -10,7 +10,7 @@ public:
 
     virtual ~ServerPacket();
 
-    virtual void read(ByteBuffer&) = 0;
+    virtual void write(ByteBuffer&) = 0;
 };
 
 #endif /* defined(__Proxy__ServerPacket__) */

@@ -85,6 +85,8 @@ public:
 
     void compact();
 
+    ubyte_t *getData();
+
     size_t getLimit();
 
     size_t getPosition();

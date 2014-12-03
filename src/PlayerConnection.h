@@ -3,7 +3,8 @@
 
 #include "ByteBuffer.h"
 #include "ClientSocket.h"
-#include "PacketFactory.h"
+#include "PacketHandler.h"
+#include "ServerPacket.h"
 
 #include <atomic>
 #include <thread>
@@ -13,6 +14,10 @@ class PlayerConnection {
     friend class PacketHandler;
 
 public:
+    enum Phase {
+        HANDSHAKE, STATUS, LOGIN, PLAY
+    };
+
     PlayerConnection(ClientSocket*);
 
     ~PlayerConnection();
@@ -21,21 +26,18 @@ public:
 
     bool isClosed();
 
-    void runRead();
+    void run();
 
-    void runWrite();
+    void sendPacket(ServerPacket*);
 
 private:
-    static PacketFactory factories[4];
-
     ClientSocket *socket;
-    std::thread readThread;
-    std::thread writeThread;
+    std::thread thread;
     ByteBuffer readBuffer;
     ByteBuffer writeBuffer;
     PacketHandler *handler;
     std::atomic<bool> closed;
-    std::atomic<PacketFactory::Phase> phase;
+    std::atomic<Phase> phase;
 };
 
 #endif /* defined(__Proxy__PlayerConnection__) */

@@ -238,6 +238,10 @@ void ByteBuffer::compact() {
     position = 0;
 }
 
+ubyte_t *ByteBuffer::getData() {
+    return buffer.data();
+}
+
 size_t ByteBuffer::getLimit() {
     return limit;
 }
