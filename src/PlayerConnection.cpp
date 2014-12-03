@@ -98,6 +98,7 @@ void PlayerConnection::sendPacket(ServerPacket *packet) {
             writeBuffer.putVarInt(packetLength);
             writeBuffer.rewind();
             socket->transmit(writeBuffer.getData(), writeBuffer.getLimit());
+            delete packet;
         }
     } catch (const ClientSocket::SocketWriteException &e) {
         std::cout<< e.what() << std::endl;
