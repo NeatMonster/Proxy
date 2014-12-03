@@ -1,13 +1,15 @@
 #include "PlayerConnection.h"
 
+#include "ChatMessage.h"
 #include "Logger.h"
+#include "PacketDisconnect.h"
 #include "PacketHandshake.h"
 #include "PacketPing.h"
 #include "PacketRequest.h"
 
 #include <typeinfo>
 
-PlayerConnection::PlayerConnection(ClientSocket *socket) : socket(socket), closed(false) {
+PlayerConnection::PlayerConnection(ClientSocket *socket) : socket(socket), closed(false), phase(HANDSHAKE) {
     thread = std::thread(&PlayerConnection::run, this);
     handler = new PacketHandler(this);
 }
@@ -61,7 +63,7 @@ void PlayerConnection::run() {
                                 break;
                         }
                         if (packet == nullptr) {
-                            Logger::warning() << packetId << " n'est pas ID de paquet valide" << std::endl;
+                            disconnect("ID de paquet invalide : " + std::to_string(packetId));
                             break;
                         } else {
                             packet->read(readBuffer);
@@ -102,4 +104,13 @@ void PlayerConnection::sendPacket(ServerPacket *packet) {
         Logger::info() << "/" << socket->getIP() << ":" << socket->getPort() << " s'est déconnecté" << std::endl;
         close();
     }
+}
+
+void PlayerConnection::disconnect(string_t message) {
+    Logger::info() << "/" << socket->getIP() << ":" << socket->getPort()
+        << " a été déconnecté : " << message << std::endl;
+    PacketDisconnect *packet = new PacketDisconnect();
+    packet->reason = (Chat() << message).getJSON();
+    sendPacket(packet);
+    close();
 }

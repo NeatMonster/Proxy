@@ -7,10 +7,8 @@
 #include <string>
 #include <vector>
 
-// Taille maximale d'un paquet TCP.
 #define BUFFER_SIZE 65535
 
-// Définition de types de taille fixée.
 typedef std::int8_t byte_t;
 typedef std::uint8_t ubyte_t;
 typedef std::vector<byte_t> bytes_t;
@@ -29,6 +27,11 @@ typedef std::string string_t;
 struct InvalidArgumentException : std::runtime_error {
     InvalidArgumentException(string_t s) : std::runtime_error(s) {}
 };
+
+template<class T>
+inline bool contains(T x, std::vector<T> vec) {
+    return std::find(vec.begin(), vec.end(), x) != vec.end();
+}
 
 inline size_t getSize(uint_t i) {
     if (i < 128)

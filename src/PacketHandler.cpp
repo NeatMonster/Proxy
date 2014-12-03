@@ -14,6 +14,13 @@ void PacketHandler::handleHandshake(PacketHandshake *packet) {
         case PlayerConnection::STATUS:
             connect->phase = PlayerConnection::STATUS;
             break;
+        case PlayerConnection::LOGIN:
+            if (packet->protocolVersion < 47)
+                connect->disconnect("Client trop ancien, merci d'utiliser au moins la 1.8");
+            else if (packet->protocolVersion > 47)
+                connect->disconnect("Serveur trop ancien, merci d'utiliser au plus la 1.8.1");
+            else
+                connect->phase = PlayerConnection::LOGIN;
         default:
             break;
     }

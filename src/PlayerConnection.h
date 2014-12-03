@@ -30,6 +30,8 @@ public:
 
     void sendPacket(ServerPacket*);
 
+    void disconnect(string_t);
+
 private:
     ClientSocket *socket;
     std::thread thread;
