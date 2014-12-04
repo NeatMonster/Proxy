@@ -273,13 +273,13 @@ void ByteBuffer::setSize(size_t size) {
 }
 
 void ByteBuffer::shift(size_t shift) {
+    if (shift == 0 || position == limit)
+        return;
     if (limit + shift > buffer.size())
         setSize(limit + shift);
-    size_t limit = this->limit;
-    this->limit += shift;
-    for (size_t i = 1; i <= limit; i++)
-        buffer[limit - i + shift] = buffer[limit - i];
-    position = limit;
+    for (int i = limit - 1; i >= (int) position; i--)
+        buffer[i + shift] = buffer[i];
+    limit += shift;
 }
 
 void ByteBuffer::reverse(ubyte_t *bs, size_t size) {

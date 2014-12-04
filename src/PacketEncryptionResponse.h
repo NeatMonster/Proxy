@@ -1,9 +1,9 @@
 #ifndef __Proxy__PacketEncryptionResponse__
 #define __Proxy__PacketEncryptionResponse__
 
-#include "ClientPacket.h"
+#include "Packet.h"
 
-class PacketEncryptionResponse : public ClientPacket {
+class PacketEncryptionResponse : public Packet {
 public:
     ubytes_t sharedSecret;
     ubytes_t verifyToken;

@@ -5,6 +5,10 @@
 
 class ClientSocket : public Socket {
 public:
+    struct SocketConnectException : public SocketException {
+        SocketConnectException(int code) : SocketException(code) {}
+    };
+
     struct SocketReadException : public SocketException {
         SocketReadException(int code) : SocketException(code) {}
     };
@@ -12,6 +16,8 @@ public:
     struct SocketWriteException : public SocketException {
         SocketWriteException(int code) : SocketException(code) {}
     };
+
+    ClientSocket(SocketAddress);
 
     ClientSocket(int, SocketAddress);
 

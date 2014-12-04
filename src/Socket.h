@@ -10,14 +10,6 @@
 
 #define INVALID_HANDLE -1
 
-#ifndef MSG_NOSIGNAL
-const int MSG_NOSIGNAL = 0;
-#endif
-
-#ifndef SO_NOSIGPIPE
-const int SO_NOSIGPIPE = 0;
-#endif
-
 class Socket {
 public:
     class SocketAddress {
@@ -44,6 +36,10 @@ public:
         SocketCloseException(int code) : SocketException(code) {}
     };
 
+    struct SocketCreateException : public SocketException {
+        SocketCreateException(int code) : SocketException(code) {}
+    };
+
     struct SocketFcntlException : public SocketException {
         SocketFcntlException(int code) : SocketException(code) {}
     };
@@ -56,17 +52,12 @@ public:
 
     bool isOpen();
 
-    bool isBlocking();
-
-    void makeNonBlocking();
-
     void close();
 
 protected:
     SocketAddress address;
     int handle;
     bool opened;
-    bool blocking;
 };
 
 #endif /* defined(__Proxy__Socket__) */

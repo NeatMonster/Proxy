@@ -14,10 +14,6 @@ public:
         SocketBindException(int code) : SocketException(code) {}
     };
 
-    struct SocketCreateException : public SocketException {
-        SocketCreateException(int code) : SocketException(code) {}
-    };
-
     struct SocketListenException : public SocketException {
         SocketListenException(int code) : SocketException(code) {}
     };
@@ -35,9 +31,8 @@ public:
     ClientSocket *accept();
 
 private:
-    bool opened;
-    bool stage1;
-    bool stage2;
+    bool reuse;
+    bool bound;
 };
 
 #endif /* defined(__Proxy__ServerSocket__) */

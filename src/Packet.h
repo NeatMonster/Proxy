@@ -1,7 +1,10 @@
 #ifndef __Proxy__Packet__
 #define __Proxy__Packet__
 
+#include "ByteBuffer.h"
 #include "Types.h"
+
+class PacketHandler;
 
 class Packet {
 public:
@@ -10,6 +13,12 @@ public:
     virtual ~Packet();
 
     varint_t getPacketId();
+
+    virtual void read(ByteBuffer&);
+
+    virtual void write(ByteBuffer&);
+
+    virtual void handle(PacketHandler*);
 
 private:
     varint_t packetId;

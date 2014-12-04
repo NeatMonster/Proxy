@@ -1,6 +1,8 @@
 #include "PacketRequest.h"
 
-PacketRequest::PacketRequest() : ClientPacket(0x00) {}
+#include "PacketHandler.h"
+
+PacketRequest::PacketRequest() : Packet(0x00) {}
 
 void PacketRequest::read(ByteBuffer&) {}
 

@@ -2,27 +2,41 @@
 
 #include <errno.h>
 
+ClientSocket::ClientSocket(SocketAddress address) : Socket(address) {
+    if ((handle = ::socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_HANDLE)
+        throw SocketCreateException(errno);
+    readPointer = readBuffer;
+    dataLength = 0;
+}
+
 ClientSocket::ClientSocket(int handle, SocketAddress address) : Socket(address) {
     this->handle = handle;
+    opened = true;
     readPointer = readBuffer;
     dataLength = 0;
 }
 
 ClientSocket::~ClientSocket() {
     try {
-        if (opened)
+        if (isOpen())
             close();
     } catch (...) {}
 }
 
-void ClientSocket::open() {}
+void ClientSocket::open() {
+    if (!isOpen()) {
+        if (::connect(handle, address.getAddress(), address.getSize()) < 0)
+            throw SocketConnectException(errno);
+        opened = true;
+    }
+}
 
 size_t ClientSocket::transmit(ubyte_t *buffer, size_t size) {
     if (buffer == nullptr)
         throw InvalidArgumentException("Buffer invalide.");
     else if (size == 0)
         return 0;
-    int count = ::send(handle, buffer, size, MSG_NOSIGNAL);
+    int count = ::send(handle, buffer, size, 0);
     if (count < 0) {
         if (errno == EWOULDBLOCK)
             return 0;
@@ -35,7 +49,7 @@ size_t ClientSocket::transmit(ubyte_t *buffer, size_t size) {
 size_t ClientSocket::receive(ubyte_t *buffer, size_t size) {
     if (dataLength <= 0) {
         readPointer = readBuffer;
-        dataLength = ::recv(handle, readBuffer, sizeof(readBuffer), MSG_NOSIGNAL);
+        dataLength = ::recv(handle, readBuffer, sizeof(readBuffer), 0);
         if (dataLength <= 0) {
             if (errno != EWOULDBLOCK)
                 throw SocketReadException(errno);
@@ -44,12 +58,9 @@ size_t ClientSocket::receive(ubyte_t *buffer, size_t size) {
     if (dataLength < (int) size)
         size = dataLength;
     int remaining = size;
-    while (remaining > 0) {
-        *buffer = *readPointer;
-        buffer++;
-        readPointer++;
+    while (remaining-- > 0) {
+        *(buffer++) = *(readPointer++);
         dataLength--;
-        remaining--;
     }
     return size;
 }

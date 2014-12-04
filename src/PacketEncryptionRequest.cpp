@@ -1,6 +1,6 @@
 #include "PacketEncryptionRequest.h"
 
-PacketEncryptionRequest::PacketEncryptionRequest() : ServerPacket(0x01) {}
+PacketEncryptionRequest::PacketEncryptionRequest() : Packet(0x01) {}
 
 void PacketEncryptionRequest::write(ByteBuffer &buffer) {
     buffer.putString(serverId);

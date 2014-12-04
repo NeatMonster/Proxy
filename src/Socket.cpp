@@ -35,7 +35,7 @@ socklen_t Socket::SocketAddress::getSize() {
     return sizeof(address);
 }
 
-Socket::Socket(SocketAddress address) : address(address), handle(INVALID_HANDLE), opened(false), blocking(true) {}
+Socket::Socket(SocketAddress address) : address(address), handle(INVALID_HANDLE), opened(false) {}
 
 Socket::~Socket() {
     if (handle > 0) {
@@ -48,21 +48,6 @@ bool Socket::isOpen() {
     return handle != INVALID_HANDLE && opened;
 }
 
-bool Socket::isBlocking() {
-    return blocking;
-}
-
-void Socket::makeNonBlocking() {
-    int flags, result;
-    flags = ::fcntl(handle, F_GETFL, 0);
-    result = ::fcntl(handle, F_SETFL, flags | O_NONBLOCK);
-    if (result < 0) {
-        blocking = true;
-        throw SocketFcntlException(errno);
-    } else
-        blocking = false;
-}
-
 void Socket::close() {
     if (handle > 0) {
         ::shutdown(handle, SHUT_RD);
@@ -70,7 +55,6 @@ void Socket::close() {
             throw SocketCloseException(errno);
         handle = INVALID_HANDLE;
         opened = false;
-        blocking = true;
     }
 }
 

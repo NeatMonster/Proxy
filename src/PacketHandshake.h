@@ -1,9 +1,9 @@
 #ifndef __Proxy__PacketHandshake__
 #define __Proxy__PacketHandshake__
 
-#include "ClientPacket.h"
+#include "Packet.h"
 
-class PacketHandshake : public ClientPacket {
+class PacketHandshake : public Packet {
 public:
     varint_t protocolVersion;
     string_t serverAddress;
@@ -13,6 +13,8 @@ public:
     PacketHandshake();
 
     void read(ByteBuffer&);
+
+    void write(ByteBuffer&);
 
     void handle(PacketHandler*);
 };

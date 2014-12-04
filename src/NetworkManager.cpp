@@ -38,8 +38,7 @@ void NetworkManager::run() {
         while (true) {
             try {
                 ClientSocket *clientSocket = socket->accept();
-                Logger::info() << "/" << clientSocket->getIP() << ":" <<
-                    clientSocket->getPort() << " s'est connecté" << std::endl;
+                Logger::info() << "<Client -> Proxy> connexion" << std::endl;
                 connects.push_back(new PlayerConnection(clientSocket));
             } catch (const ServerSocket::SocketAcceptException &e) {}
         }

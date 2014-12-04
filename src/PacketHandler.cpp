@@ -51,13 +51,13 @@ void PacketHandler::handleRequest(PacketRequest*) {
         }}
     };
     packet->response = response.dump();
-    connect->sendPacket(packet);
+    connect->sendToClient(packet);
 }
 
 void PacketHandler::handlePing(PacketPing *packet) {
     PacketPing *pingPacket = new PacketPing();
     pingPacket->time = packet->time;
-    connect->sendPacket(pingPacket);
+    connect->sendToClient(pingPacket);
     connect->close();
 }
 
@@ -70,7 +70,7 @@ void PacketHandler::handleLoginStart(PacketLoginStart *packet) {
     verifyToken = {(ubyte_t) (x & 0xff), (ubyte_t) ((x >> 8) & 0xff),
         (ubyte_t) ((x >> 16) & 0xff), (ubyte_t) ((x >> 24) & 0xff)};
     encryptPacket->verifyToken = verifyToken;
-    connect->sendPacket(encryptPacket);
+    connect->sendToClient(encryptPacket);
 }
 
 void PacketHandler::handleEncryptionResponse(PacketEncryptionResponse *packet) {
@@ -92,9 +92,19 @@ void PacketHandler::handleEncryptionResponse(PacketEncryptionResponse *packet) {
                 Logger::info() << "L'UUID du joueur " << profile->name << " est " << profile->uuid << std::endl;
                 PacketSetCompression *compressPacket = new PacketSetCompression();
                 compressPacket->threshold = 256;
-                connect->sendPacket(compressPacket);
+                connect->sendToClient(compressPacket);
                 connect->compression = true;
                 connect->phase = PlayerConnection::PLAY;
+                connect->connect();
+                PacketHandshake *handPacket = new PacketHandshake();
+                handPacket->protocolVersion = 47;
+                handPacket->serverAddress = "localhost";
+                handPacket->serverPort = 25566;
+                handPacket->nextState = PlayerConnection::LOGIN;
+                connect->sendToServer(handPacket);
+                PacketLoginStart *loginPacket = new PacketLoginStart();
+                loginPacket->name = username;
+                connect->sendToServer(loginPacket);
             }
         } catch (const Mojang::SSLException &e) {
             connect->disconnect("Les serveurs d'authentification sont hors-ligne, merci de réessayer plus tard");

@@ -2,7 +2,7 @@
 
 #include "PacketHandler.h"
 
-PacketPing::PacketPing() : ClientPacket(0x01), ServerPacket(0x01) {}
+PacketPing::PacketPing() : Packet(0x01) {}
 
 void PacketPing::read(ByteBuffer &buffer) {
     buffer.getLong(time);

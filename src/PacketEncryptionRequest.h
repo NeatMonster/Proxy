@@ -1,9 +1,9 @@
 #ifndef __Proxy__PacketEncryptionRequest__
 #define __Proxy__PacketEncryptionRequest__
 
-#include "ServerPacket.h"
+#include "Packet.h"
 
-class PacketEncryptionRequest : public ServerPacket {
+class PacketEncryptionRequest : public Packet {
 public:
     string_t serverId;
     ubytes_t publicKey;

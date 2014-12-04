@@ -3,8 +3,8 @@
 
 #include "ByteBuffer.h"
 #include "ClientSocket.h"
+#include "Packet.h"
 #include "PacketHandler.h"
-#include "ServerPacket.h"
 
 #include "polarssl/aes.h"
 
@@ -30,17 +30,31 @@ public:
 
     bool isClosed();
 
-    void run();
+    void runClient();
 
-    void sendPacket(ServerPacket*);
+    void runServer();
+
+    void sendToClient(Packet*);
+
+    void sendToClient(ubyte_t*, varint_t);
+
+    void sendToServer(Packet*);
+
+    void sendToServer(ubyte_t*, varint_t);
+
+    void connect();
 
     void disconnect(string_t);
 
 private:
-    ClientSocket *socket;
-    std::thread thread;
-    ByteBuffer readBuffer;
-    ByteBuffer writeBuffer;
+    ClientSocket *cSocket;
+    ClientSocket *sSocket;
+    std::thread cThread;
+    std::thread sThread;
+    ByteBuffer cReadBuffer;
+    ByteBuffer sReadBuffer;
+    ByteBuffer cWriteBuffer;
+    ByteBuffer sWriteBuffer;
     PacketHandler *handler;
     std::atomic<bool> closed;
     Phase phase;

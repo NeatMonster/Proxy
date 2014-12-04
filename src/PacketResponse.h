@@ -1,9 +1,9 @@
 #ifndef __Proxy__PacketResponse__
 #define __Proxy__PacketResponse__
 
-#include "ServerPacket.h"
+#include "Packet.h"
 
-class PacketResponse : public ServerPacket {
+class PacketResponse : public Packet {
 public:
     string_t response;
 

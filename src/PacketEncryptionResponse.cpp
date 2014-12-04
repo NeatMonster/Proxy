@@ -1,7 +1,8 @@
 #include "PacketEncryptionResponse.h"
+
 #include "PacketHandler.h"
 
-PacketEncryptionResponse::PacketEncryptionResponse() : ClientPacket(0x01) {}
+PacketEncryptionResponse::PacketEncryptionResponse() : Packet(0x01) {}
 
 void PacketEncryptionResponse::read(ByteBuffer &buffer) {
     varint_t secretLength;

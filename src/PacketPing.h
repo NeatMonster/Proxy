@@ -1,10 +1,9 @@
 #ifndef __Proxy__PacketPing__
 #define __Proxy__PacketPing__
 
-#include "ClientPacket.h"
-#include "ServerPacket.h"
+#include "Packet.h"
 
-class PacketPing : public ClientPacket, public ServerPacket {
+class PacketPing : public Packet {
 public:
     long_t time;
 

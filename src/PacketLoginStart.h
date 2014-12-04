@@ -1,15 +1,17 @@
 #ifndef __Proxy__PacketLoginStart__
 #define __Proxy__PacketLoginStart__
 
-#include "ClientPacket.h"
+#include "Packet.h"
 
-class PacketLoginStart : public ClientPacket {
+class PacketLoginStart : public Packet {
 public:
     string_t name;
 
     PacketLoginStart();
 
     void read(ByteBuffer&);
+
+    void write(ByteBuffer&);
 
     void handle(PacketHandler*);
 };

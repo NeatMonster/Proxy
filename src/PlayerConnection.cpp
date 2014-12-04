@@ -12,27 +12,35 @@
 
 #include <typeinfo>
 
-PlayerConnection::PlayerConnection(ClientSocket *socket) : socket(socket), closed(false), phase(HANDSHAKE),
-        encryption(false), compression(false) {
-    thread = std::thread(&PlayerConnection::run, this);
+PlayerConnection::PlayerConnection(ClientSocket *socket) : cSocket(socket), sSocket(nullptr),
+        closed(false), phase(HANDSHAKE), encryption(false), compression(false) {
+    cThread = std::thread(&PlayerConnection::runClient, this);
     handler = new PacketHandler(this);
 }
 
 PlayerConnection::~PlayerConnection() {
     delete handler;
-    delete socket;
+    delete cSocket;
+    if (sSocket != nullptr)
+        delete sSocket;
 }
 
 void PlayerConnection::join() {
-    thread.join();
+    cThread.join();
+    if (sThread.joinable())
+        sThread.join();
 }
 
 void PlayerConnection::close() {
     if (!closed) {
         closed = true;
         try {
-            socket->close();
+            cSocket->close();
         } catch (const Socket::SocketCloseException &e) {}
+        if (sSocket != nullptr)
+            try {
+                sSocket->close();
+            } catch (const Socket::SocketCloseException &e) {}
     }
 }
 
@@ -40,40 +48,42 @@ bool PlayerConnection::isClosed() {
     return closed;
 }
 
-void PlayerConnection::run() {
+void PlayerConnection::runClient() {
     try {
         ubyte_t buffer[BUFFER_SIZE];
         while (!closed) {
-            size_t rcvd = socket->receive(buffer, sizeof(buffer));
-            readBuffer.setPosition(readBuffer.getLimit());
+            size_t rcvd = cSocket->receive(buffer, sizeof(buffer));
+            cReadBuffer.setPosition(cReadBuffer.getLimit());
             if (encryption) {
                 ubyte_t decrypt[rcvd];
                 aes_crypt_cfb8(&aes_dec, AES_DECRYPT, rcvd, iv_dec, buffer, decrypt);
-                readBuffer.put(decrypt, rcvd);
+                cReadBuffer.put(decrypt, rcvd);
             } else
-                readBuffer.put(buffer, rcvd);
-            readBuffer.rewind();
+                cReadBuffer.put(buffer, rcvd);
+            cReadBuffer.rewind();
             try {
-                while (readBuffer.getPosition() < readBuffer.getLimit()) {
+                while (cReadBuffer.getPosition() < cReadBuffer.getLimit()) {
                     varint_t packetLength;
-                    readBuffer.getVarInt(packetLength);
-                    if (readBuffer.getLimit() - readBuffer.getPosition() >= packetLength) {
+                    cReadBuffer.getVarInt(packetLength);
+                    if (cReadBuffer.getLimit() - cReadBuffer.getPosition() >= packetLength) {
+                        varint_t start = cReadBuffer.getPosition();
                         if (compression) {
                             varint_t dataLength;
-                            readBuffer.getVarInt(dataLength);
-                            if (dataLength == 0)
-                                packetLength -= getSize(dataLength);
-                            else {
-                                auto inflated = Compression::inflateZlib(readBuffer.getData() + readBuffer.getPosition(), dataLength);
-                                readBuffer.clear();
-                                readBuffer.put(inflated.first, inflated.second);
+                            cReadBuffer.getVarInt(dataLength);
+                            packetLength -= getSize(dataLength);
+                            start = cReadBuffer.getPosition();
+                            if (dataLength > 0) {
+                                auto inflated = Compression::inflateZlib(cReadBuffer.getData() + cReadBuffer.getPosition(), dataLength);
+                                cReadBuffer.shift(inflated.second - packetLength);
+                                cReadBuffer.put(inflated.first, inflated.second);
+                                cReadBuffer.setPosition(start);
+                                packetLength = inflated.second;
                                 delete inflated.first;
-                                packetLength = dataLength;
                             }
                         }
                         varint_t packetId;
-                        readBuffer.getVarInt(packetId);
-                        ClientPacket *packet = nullptr;
+                        cReadBuffer.getVarInt(packetId);
+                        Packet *packet = nullptr;
                         switch (phase) {
                             case HANDSHAKE:
                                 if (packetId == 0x00)
@@ -93,16 +103,21 @@ void PlayerConnection::run() {
                             default:
                                 break;
                         }
+                        if (phase == PLAY) {
+                            sendToServer(cReadBuffer.getData() + start, packetLength);
+                            cReadBuffer.setPosition(start + packetLength);
+                            cReadBuffer.compact();
+                            continue;
+                        }
                         if (packet == nullptr) {
                             disconnect("ID de paquet invalide : " + std::to_string(packetId));
                             break;
                         } else {
-                            packet->read(readBuffer);
-                            Logger::info() << "/" << socket->getIP() << ":" << socket->getPort()
-                                << " a envoyé un paquet " << typeid(*packet).name() << std::endl;
+                            packet->read(cReadBuffer);
+                            Logger::info() << "<Client -> Proxy> " << typeid(*packet).name() << std::endl;
                             packet->handle(handler);
                             delete packet;
-                            readBuffer.compact();
+                            cReadBuffer.compact();
                         }
                     } else
                         break;
@@ -110,69 +125,191 @@ void PlayerConnection::run() {
             } catch (const ByteBuffer::BufferUnderflowException &e) {}
         }
     } catch (const ClientSocket::SocketReadException &e) {
-        Logger::info() << "/" << socket->getIP() << ":" << socket->getPort() << " s'est déconnecté" << std::endl;
+        Logger::info() << "<Client -> Proxy> déconnexion" << std::endl;
         close();
     }
 }
 
-void PlayerConnection::sendPacket(ServerPacket *packet) {
+void PlayerConnection::runServer() {
+    try {
+        ubyte_t buffer[BUFFER_SIZE];
+        while (!closed) {
+            size_t rcvd = sSocket->receive(buffer, sizeof(buffer));
+            sReadBuffer.setPosition(sReadBuffer.getLimit());
+            sReadBuffer.put(buffer, rcvd);
+            sReadBuffer.rewind();
+            try {
+                while (sReadBuffer.getPosition() < sReadBuffer.getLimit()) {
+                    varint_t packetLength;
+                    sReadBuffer.getVarInt(packetLength);
+                    size_t start = sReadBuffer.getPosition();
+                    if (sReadBuffer.getLimit() - sReadBuffer.getPosition() >= packetLength) {
+                        varint_t packetId;
+                        sReadBuffer.getVarInt(packetId);
+                        sendToClient(sReadBuffer.getData() + start, packetLength);
+                        sReadBuffer.setPosition(start + packetLength);
+                        sReadBuffer.compact();
+                    } else
+                        break;
+                }
+            } catch (const ByteBuffer::BufferUnderflowException &e) {}
+        }
+    } catch (const ClientSocket::SocketReadException &e) {
+        Logger::info() << "<Proxy <- Server> déconnexion" << std::endl;
+        close();
+    }
+}
+
+void PlayerConnection::sendToClient(Packet *packet) {
     try {
         if (!closed) {
-            writeBuffer.clear();
-            writeBuffer.putVarInt(packet->getPacketId());
-            packet->write(writeBuffer);
-            Logger::info() << "/" << socket->getIP() << ":" << socket->getPort()
-                << " a reçu un paquet " << typeid(*packet).name() << std::endl;
-            varint_t length = writeBuffer.getLimit();
+            cWriteBuffer.clear();
+            cWriteBuffer.putVarInt(packet->getPacketId());
+            packet->write(cWriteBuffer);
+            Logger::info() << "<Client <- Proxy> " << typeid(*packet).name() << std::endl;
+            varint_t packetLength = cWriteBuffer.getLimit();
             if (compression) {
-                varint_t dataLength;
-                varint_t packetLength;
-                if (length < 256) {
-                    dataLength = 0;
-                    packetLength = length;
-                } else {
-                    auto deflated = Compression::deflateZLib(writeBuffer.getData(), length);
-                    writeBuffer.clear();
-                    writeBuffer.put(deflated.first, deflated.second);
+                varint_t dataLength = 0;
+                if (packetLength >= 256) {
+                    dataLength = packetLength;
+                    auto deflated = Compression::deflateZLib(cWriteBuffer.getData(), packetLength);
+                    cWriteBuffer.clear();
+                    cWriteBuffer.put(deflated.first, deflated.second);
                     delete deflated.first;
-                    dataLength = length;
-                    packetLength = writeBuffer.getLimit();
+                    packetLength = cWriteBuffer.getLimit();
                 }
                 packetLength += getSize(dataLength);
-                writeBuffer.shift(getSize(packetLength) + getSize(dataLength));
-                writeBuffer.rewind();
-                writeBuffer.putVarInt(packetLength);
-                writeBuffer.putVarInt(dataLength);
-                writeBuffer.rewind();
+                cWriteBuffer.rewind();
+                cWriteBuffer.shift(getSize(packetLength) + getSize(dataLength));
+                cWriteBuffer.rewind();
+                cWriteBuffer.putVarInt(packetLength);
+                cWriteBuffer.putVarInt(dataLength);
+                cWriteBuffer.rewind();
             } else {
-                writeBuffer.shift(getSize(length));
-                writeBuffer.rewind();
-                writeBuffer.putVarInt(length);
-                writeBuffer.rewind();
+                cWriteBuffer.rewind();
+                cWriteBuffer.shift(getSize(packetLength));
+                cWriteBuffer.rewind();
+                cWriteBuffer.putVarInt(packetLength);
+                cWriteBuffer.rewind();
             }
             if (encryption) {
-                ubyte_t encrypt[writeBuffer.getLimit()];
-                aes_crypt_cfb8(&aes_enc, AES_ENCRYPT, writeBuffer.getLimit(), iv_enc, writeBuffer.getData(), encrypt);
-                writeBuffer.clear();
-                writeBuffer.put(encrypt, sizeof(encrypt));
-                writeBuffer.rewind();
+                ubyte_t encrypt[cWriteBuffer.getLimit()];
+                aes_crypt_cfb8(&aes_enc, AES_ENCRYPT, cWriteBuffer.getLimit(), iv_enc, cWriteBuffer.getData(), encrypt);
+                cWriteBuffer.clear();
+                cWriteBuffer.put(encrypt, sizeof(encrypt));
+                cWriteBuffer.rewind();
             }
-            socket->transmit(writeBuffer.getData(), writeBuffer.getLimit());
+            cSocket->transmit(cWriteBuffer.getData(), cWriteBuffer.getLimit());
             delete packet;
         }
     } catch (const ClientSocket::SocketWriteException &e) {
-        std::cout<< e.what() << std::endl;
-        Logger::info() << "/" << socket->getIP() << ":" << socket->getPort() << " s'est déconnecté" << std::endl;
+        Logger::info() << "<Client <- Proxy> déconnexion" << std::endl;
         close();
+    }
+}
+
+void PlayerConnection::sendToClient(ubyte_t *packetData, varint_t packetLength) {
+    try {
+        if (!closed) {
+            cWriteBuffer.clear();
+            cWriteBuffer.put(packetData, packetLength);
+            if (compression) {
+                varint_t dataLength = 0;
+                if (packetLength >= 256) {
+                    dataLength = packetLength;
+                    auto deflated = Compression::deflateZLib(cWriteBuffer.getData(), packetLength);
+                    cWriteBuffer.clear();
+                    cWriteBuffer.put(deflated.first, deflated.second);
+                    delete deflated.first;
+                    packetLength = cWriteBuffer.getLimit();
+                }
+                packetLength += getSize(dataLength);
+                cWriteBuffer.rewind();
+                cWriteBuffer.shift(getSize(packetLength) + getSize(dataLength));
+                cWriteBuffer.rewind();
+                cWriteBuffer.putVarInt(packetLength);
+                cWriteBuffer.putVarInt(dataLength);
+                cWriteBuffer.rewind();
+            } else {
+                cWriteBuffer.rewind();
+                cWriteBuffer.shift(getSize(packetLength));
+                cWriteBuffer.rewind();
+                cWriteBuffer.putVarInt(packetLength);
+                cWriteBuffer.rewind();
+            }
+            if (encryption) {
+                ubyte_t encrypt[cWriteBuffer.getLimit()];
+                aes_crypt_cfb8(&aes_enc, AES_ENCRYPT, cWriteBuffer.getLimit(), iv_enc, cWriteBuffer.getData(), encrypt);
+                cWriteBuffer.clear();
+                cWriteBuffer.put(encrypt, sizeof(encrypt));
+                cWriteBuffer.rewind();
+            }
+            cSocket->transmit(cWriteBuffer.getData(), cWriteBuffer.getLimit());
+        }
+    } catch (const ClientSocket::SocketWriteException &e) {
+        Logger::info() << "<Client <- Serveur> déconnexion" << std::endl;
+        close();
+    }
+}
+
+void PlayerConnection::sendToServer(Packet *packet) {
+    try {
+        if (!closed) {
+            sWriteBuffer.clear();
+            sWriteBuffer.putVarInt(packet->getPacketId());
+            packet->write(sWriteBuffer);
+            Logger::info() << "<Proxy -> Serveur> " << typeid(*packet).name() << std::endl;
+            varint_t packetLength = sWriteBuffer.getLimit();
+            sWriteBuffer.rewind();
+            sWriteBuffer.shift(getSize(packetLength));
+            sWriteBuffer.rewind();
+            sWriteBuffer.putVarInt(packetLength);
+            sWriteBuffer.rewind();
+            sSocket->transmit(sWriteBuffer.getData(), sWriteBuffer.getLimit());
+            delete packet;
+        }
+    } catch (const ClientSocket::SocketWriteException &e) {
+        Logger::info() << "<Proxy -> Serveur> déconnexion" << std::endl;
+        close();
+    }
+}
+
+void PlayerConnection::sendToServer(ubyte_t *packetData, varint_t packetLength) {
+    try {
+        varint_t packetId = *packetData;
+        if (!closed) {
+            sWriteBuffer.clear();
+            sWriteBuffer.putVarInt(packetLength);
+            sWriteBuffer.put(packetData, packetLength);
+            sSocket->transmit(sWriteBuffer.getData(), sWriteBuffer.getLimit());
+        }
+    } catch (const ClientSocket::SocketWriteException &e) {
+        Logger::info() << "<Client -> Serveur> déconnexion" << std::endl;
+        close();
+    }
+}
+
+void PlayerConnection::connect() {
+    string_t ip = "127.0.0.1";
+    ushort port = 25566;
+    try {
+        sSocket = new ClientSocket(Socket::SocketAddress(ip, port));
+        sSocket->open();
+        sThread = std::thread(&PlayerConnection::runServer, this);
+        Logger::info() << "<Proxy -> Serveur> connexion" << std::endl;
+    } catch (const ClientSocket::SocketConnectException &e) {
+        Logger::warning() << "IMPOSSIBLE DE SE CONNECTER AU SERVEUR !" << std::endl;
+        Logger::warning() << "L'erreur rencontrée est : " << e.what() << std::endl;
+        Logger::warning() << "Peut-être que le serveur est hors-ligne ?" << std::endl;
+        disconnect("Impossible de se connecter au serveur");
     }
 }
 
 void PlayerConnection::disconnect(string_t message) {
-    Logger::info() << "/" << socket->getIP() << ":" << socket->getPort()
-        << " a été déconnecté : '" << message << "'" << std::endl;
+    Logger::info() << "<Client <- Proxy> déconnexion : '" << message << "'" << std::endl;
     PacketDisconnect *packet = new PacketDisconnect();
     packet->reason = (Chat() << message).getJSON();
-    sendPacket(packet);
+    sendToClient(packet);
     close();
 }
 

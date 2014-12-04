@@ -1,9 +1,9 @@
 #ifndef __Proxy__PacketRequest__
 #define __Proxy__PacketRequest__
 
-#include "ClientPacket.h"
+#include "Packet.h"
 
-class PacketRequest : public ClientPacket {
+class PacketRequest : public Packet {
 public:
     PacketRequest();
 

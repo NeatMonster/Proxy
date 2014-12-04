@@ -1,9 +1,9 @@
 #ifndef __Proxy__PacketSetCompression__
 #define __Proxy__PacketSetCompression__
 
-#include "ServerPacket.h"
+#include "Packet.h"
 
-class PacketSetCompression : public ServerPacket {
+class PacketSetCompression : public Packet {
 public:
     varint_t threshold;
 
