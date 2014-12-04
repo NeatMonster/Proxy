@@ -6,6 +6,8 @@
 #include "PacketHandler.h"
 #include "ServerPacket.h"
 
+#include "polarssl/aes.h"
+
 #include <atomic>
 #include <thread>
 #include <map>
@@ -40,6 +42,13 @@ private:
     PacketHandler *handler;
     std::atomic<bool> closed;
     std::atomic<Phase> phase;
+    std::atomic<bool> encryption;
+    ubyte_t iv_enc[16];
+    ubyte_t iv_dec[16];
+    aes_context aes_enc;
+    aes_context aes_dec;
+
+    void setup(ubytes_t*);
 };
 
 #endif /* defined(__Proxy__PlayerConnection__) */

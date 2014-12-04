@@ -1,9 +1,11 @@
 #include "NetworkManager.h"
 
+#include "Encryption.h"
 #include "Logger.h"
 #include "ServerSocket.h"
 
 NetworkManager::NetworkManager() {
+    Encryption::initialize();
     thread = std::thread(&NetworkManager::run, this);
 }
 

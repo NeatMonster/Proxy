@@ -5,11 +5,16 @@
 
 class Proxy {
 public:
+    static Proxy *getProxy();
+
+    static NetworkManager *getNetwork();
+
     Proxy();
 
     ~Proxy();
 
 private:
+    static Proxy *instance;
     NetworkManager *network;
 
     void run();

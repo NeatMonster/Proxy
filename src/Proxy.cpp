@@ -11,13 +11,24 @@ int main() {
     return 0;
 }
 
+Proxy *Proxy::getProxy() {
+    return instance;
+}
+
+NetworkManager *Proxy::getNetwork() {
+    return getProxy()->network;
+}
+
 Proxy::Proxy() {
+    instance = this;
     run();
 }
 
 Proxy::~Proxy() {
     delete network;
 }
+
+Proxy *Proxy::instance;
 
 void Proxy::run() {
     network = new NetworkManager();

@@ -3,7 +3,9 @@
 #include "ChatMessage.h"
 #include "Logger.h"
 #include "PacketDisconnect.h"
+#include "PacketEncryptionResponse.h"
 #include "PacketHandshake.h"
+#include "PacketLoginStart.h"
 #include "PacketPing.h"
 #include "PacketRequest.h"
 
@@ -59,6 +61,11 @@ void PlayerConnection::run() {
                                 else if (packetId == 0x01)
                                     packet = new PacketPing();
                                 break;
+                            case LOGIN:
+                                if (packetId == 0x00)
+                                    packet = new PacketLoginStart();
+                                else if (packetId == 0x01)
+                                    packet = new PacketEncryptionResponse();
                             default:
                                 break;
                         }
@@ -68,7 +75,7 @@ void PlayerConnection::run() {
                         } else {
                             packet->read(readBuffer);
                             Logger::info() << "/" << socket->getIP() << ":" << socket->getPort()
-                            << " a envoyé un paquet " << typeid(*packet).name() << std::endl;
+                                << " a envoyé un paquet " << typeid(*packet).name() << std::endl;
                             packet->handle(handler);
                             delete packet;
                             readBuffer.compact();
@@ -108,9 +115,18 @@ void PlayerConnection::sendPacket(ServerPacket *packet) {
 
 void PlayerConnection::disconnect(string_t message) {
     Logger::info() << "/" << socket->getIP() << ":" << socket->getPort()
-        << " a été déconnecté : " << message << std::endl;
+        << " a été déconnecté : '" << message << "'" << std::endl;
     PacketDisconnect *packet = new PacketDisconnect();
     packet->reason = (Chat() << message).getJSON();
     sendPacket(packet);
     close();
+}
+
+void PlayerConnection::setup(ubytes_t *iv) {
+    aes_init(&aes_enc);
+    memcpy(this->iv_enc, iv->data(), 16);
+    aes_setkey_enc(&aes_enc, this->iv_enc, 128);
+    aes_init(&aes_dec);
+    memcpy(this->iv_dec, iv->data(), 16);
+    aes_setkey_enc(&aes_dec, this->iv_dec, 128);
 }
