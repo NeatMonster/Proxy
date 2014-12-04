@@ -12,6 +12,8 @@ public:
 
     ~NetworkManager();
 
+    std::vector<PlayerConnection*> getConnections();
+
 private:
     std::thread thread;
     std::vector<PlayerConnection*> connects;

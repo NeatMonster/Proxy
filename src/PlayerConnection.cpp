@@ -1,6 +1,7 @@
 #include "PlayerConnection.h"
 
 #include "ChatMessage.h"
+#include "Compression.h"
 #include "Logger.h"
 #include "PacketDisconnect.h"
 #include "PacketEncryptionResponse.h"
@@ -11,7 +12,8 @@
 
 #include <typeinfo>
 
-PlayerConnection::PlayerConnection(ClientSocket *socket) : socket(socket), closed(false), phase(HANDSHAKE) {
+PlayerConnection::PlayerConnection(ClientSocket *socket) : socket(socket), closed(false), phase(HANDSHAKE),
+        encryption(false), compression(false) {
     thread = std::thread(&PlayerConnection::run, this);
     handler = new PacketHandler(this);
 }
@@ -19,6 +21,10 @@ PlayerConnection::PlayerConnection(ClientSocket *socket) : socket(socket), close
 PlayerConnection::~PlayerConnection() {
     delete handler;
     delete socket;
+}
+
+void PlayerConnection::join() {
+    thread.join();
 }
 
 void PlayerConnection::close() {
@@ -40,17 +46,35 @@ void PlayerConnection::run() {
         while (!closed) {
             size_t rcvd = socket->receive(buffer, sizeof(buffer));
             readBuffer.setPosition(readBuffer.getLimit());
-            readBuffer.put(buffer, rcvd);
+            if (encryption) {
+                ubyte_t decrypt[rcvd];
+                aes_crypt_cfb8(&aes_dec, AES_DECRYPT, rcvd, iv_dec, buffer, decrypt);
+                readBuffer.put(decrypt, rcvd);
+            } else
+                readBuffer.put(buffer, rcvd);
             readBuffer.rewind();
             try {
                 while (readBuffer.getPosition() < readBuffer.getLimit()) {
                     varint_t packetLength;
                     readBuffer.getVarInt(packetLength);
                     if (readBuffer.getLimit() - readBuffer.getPosition() >= packetLength) {
+                        if (compression) {
+                            varint_t dataLength;
+                            readBuffer.getVarInt(dataLength);
+                            if (dataLength == 0)
+                                packetLength -= getSize(dataLength);
+                            else {
+                                auto inflated = Compression::inflateZlib(readBuffer.getData() + readBuffer.getPosition(), dataLength);
+                                readBuffer.clear();
+                                readBuffer.put(inflated.first, inflated.second);
+                                delete inflated.first;
+                                packetLength = dataLength;
+                            }
+                        }
                         varint_t packetId;
                         readBuffer.getVarInt(packetId);
                         ClientPacket *packet = nullptr;
-                        switch (phase.load()) {
+                        switch (phase) {
                             case HANDSHAKE:
                                 if (packetId == 0x00)
                                     packet = new PacketHandshake();
@@ -99,11 +123,40 @@ void PlayerConnection::sendPacket(ServerPacket *packet) {
             packet->write(writeBuffer);
             Logger::info() << "/" << socket->getIP() << ":" << socket->getPort()
                 << " a reçu un paquet " << typeid(*packet).name() << std::endl;
-            varint_t packetLength = writeBuffer.getLimit();
-            writeBuffer.shift(getSize(packetLength));
-            writeBuffer.rewind();
-            writeBuffer.putVarInt(packetLength);
-            writeBuffer.rewind();
+            varint_t length = writeBuffer.getLimit();
+            if (compression) {
+                varint_t dataLength;
+                varint_t packetLength;
+                if (length < 256) {
+                    dataLength = 0;
+                    packetLength = length;
+                } else {
+                    auto deflated = Compression::deflateZLib(writeBuffer.getData(), length);
+                    writeBuffer.clear();
+                    writeBuffer.put(deflated.first, deflated.second);
+                    delete deflated.first;
+                    dataLength = length;
+                    packetLength = writeBuffer.getLimit();
+                }
+                packetLength += getSize(dataLength);
+                writeBuffer.shift(getSize(packetLength) + getSize(dataLength));
+                writeBuffer.rewind();
+                writeBuffer.putVarInt(packetLength);
+                writeBuffer.putVarInt(dataLength);
+                writeBuffer.rewind();
+            } else {
+                writeBuffer.shift(getSize(length));
+                writeBuffer.rewind();
+                writeBuffer.putVarInt(length);
+                writeBuffer.rewind();
+            }
+            if (encryption) {
+                ubyte_t encrypt[writeBuffer.getLimit()];
+                aes_crypt_cfb8(&aes_enc, AES_ENCRYPT, writeBuffer.getLimit(), iv_enc, writeBuffer.getData(), encrypt);
+                writeBuffer.clear();
+                writeBuffer.put(encrypt, sizeof(encrypt));
+                writeBuffer.rewind();
+            }
             socket->transmit(writeBuffer.getData(), writeBuffer.getLimit());
             delete packet;
         }

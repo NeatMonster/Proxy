@@ -32,6 +32,8 @@ Proxy *Proxy::instance;
 
 void Proxy::run() {
     network = new NetworkManager();
-    while (true)
+    while (true) {
+        network->getConnections();
         std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 }

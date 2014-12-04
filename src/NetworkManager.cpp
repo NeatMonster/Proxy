@@ -16,6 +16,18 @@ NetworkManager::~NetworkManager() {
     }
 }
 
+std::vector<PlayerConnection*> NetworkManager::getConnections() {
+    for (auto connect = connects.end(); connect != connects.begin();) {
+        connect--;
+        if ((*connect)->isClosed()) {
+            (*connect)->join();
+            delete *connect;
+            connect = connects.erase(connect);
+        }
+    }
+    return connects;
+}
+
 void NetworkManager::run() {
     string_t ip = "127.0.0.1";
     ushort port = 25565;

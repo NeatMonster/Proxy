@@ -24,6 +24,8 @@ public:
 
     ~PlayerConnection();
 
+    void join();
+
     void close();
 
     bool isClosed();
@@ -41,8 +43,9 @@ private:
     ByteBuffer writeBuffer;
     PacketHandler *handler;
     std::atomic<bool> closed;
-    std::atomic<Phase> phase;
-    std::atomic<bool> encryption;
+    Phase phase;
+    bool encryption;
+    bool compression;
     ubyte_t iv_enc[16];
     ubyte_t iv_dec[16];
     aes_context aes_enc;
