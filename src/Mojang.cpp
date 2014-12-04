@@ -7,6 +7,7 @@
 #include "polarssl/ssl.h"
 #include "polarssl/x509.h"
 
+#include <cstring>
 #include <iomanip>
 #include <sstream>
 
@@ -50,7 +51,7 @@ Profile *Mojang::authentificate(string_t username, string_t serverId, ubytes_t s
     ssl_context ssl;
     x509_crt cacert;
 
-    memset(&ssl, 0, sizeof(ssl_context));
+    std::memset(&ssl, 0, sizeof(ssl_context));
     x509_crt_init(&cacert);
 
     int ret, server_fd = -1;
@@ -99,7 +100,7 @@ Profile *Mojang::authentificate(string_t username, string_t serverId, ubytes_t s
     ss.str("");
     ubyte_t buf[1024];
     do {
-        memset(buf, 0, sizeof(buf));
+        std::memset(buf, 0, sizeof(buf));
         ret = ssl_read(&ssl, buf, sizeof(buf) - 1);
         if (ret == POLARSSL_ERR_NET_WANT_READ || ret == POLARSSL_ERR_NET_WANT_WRITE)
             continue;
@@ -119,7 +120,7 @@ Profile *Mojang::authentificate(string_t username, string_t serverId, ubytes_t s
     x509_crt_free(&cacert);
     ssl_free(&ssl);
 
-    memset(&ssl, 0, sizeof(ssl));
+    std::memset(&ssl, 0, sizeof(ssl));
 
     if (resp.find("HTTP/1.1 200 OK") != string_t::npos) {
         string_t err;

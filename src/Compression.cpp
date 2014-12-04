@@ -2,11 +2,14 @@
 
 #include "zlib/zlib.h"
 
+#include <cstdlib>
+#include <cstring>
+
 Compression::result_t Compression::deflateZLib(ubyte_t *in, size_t inSize) {
     size_t outSize;
     ubyte_t *out = new ubyte_t[inSize];
     z_stream stream;
-    memset(&stream, 0, sizeof(stream));
+    std::memset(&stream, 0, sizeof(stream));
     stream.next_in = in;
     stream.avail_in = inSize;
     stream.next_out = out;
@@ -51,9 +54,9 @@ Compression::result_t Compression::inflateZlib(ubyte_t *in, size_t inSize) {
     }
     inflateEnd(&stream);
     size_t currentSize = 0;
-    ubyte_t *out = (ubyte_t*) malloc(outSize);
+    ubyte_t *out = (ubyte_t*) std::malloc(outSize);
     for (size_t i = 0; i < bufferPtrs.size(); i++) {
-        memcpy(out + currentSize, bufferPtrs[i], bufferSizes[i]);
+        std::memcpy(out + currentSize, bufferPtrs[i], bufferSizes[i]);
         currentSize += bufferSizes[i];
         delete bufferPtrs[i];
     }
