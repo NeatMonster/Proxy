@@ -7,6 +7,7 @@
 class PacketEncryptionResponse;
 class PacketHandshake;
 class PacketLoginStart;
+class PacketLoginSuccess;
 class PacketPing;
 class PacketRequest;
 class PlayerConnection;
@@ -26,6 +27,8 @@ public:
     void handleLoginStart(PacketLoginStart*);
 
     void handleEncryptionResponse(PacketEncryptionResponse*);
+
+    void handleLoginSuccess(PacketLoginSuccess*);
 
 private:
     PlayerConnection *connect;

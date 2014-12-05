@@ -7,6 +7,7 @@
 #include "PacketEncryptionResponse.h"
 #include "PacketHandshake.h"
 #include "PacketLoginStart.h"
+#include "PacketLoginSuccess.h"
 #include "PacketPing.h"
 #include "PacketRequest.h"
 
@@ -146,8 +147,24 @@ void PlayerConnection::runServer() {
                     if (sReadBuffer.getLimit() - sReadBuffer.getPosition() >= packetLength) {
                         varint_t packetId;
                         sReadBuffer.getVarInt(packetId);
-                        sendToClient(sReadBuffer.getData() + start, packetLength);
-                        sReadBuffer.setPosition(start + packetLength);
+                        Packet *packet = nullptr;
+                        switch (phase) {
+                            case LOGIN:
+                                if (packetId == 0x02)
+                                    packet = new PacketLoginSuccess();
+                            default:
+                                break;
+                        }
+                        if (packet == nullptr) {
+                            sendToClient(sReadBuffer.getData() + start, packetLength);
+                            sReadBuffer.setPosition(start + packetLength);
+                            sReadBuffer.compact();
+                            continue;
+                        }
+                        packet->read(sReadBuffer);
+                        Logger::info() << "<Proxy <- Serveur> " << typeid(*packet).name() << std::endl;
+                        packet->handle(handler);
+                        delete packet;
                         sReadBuffer.compact();
                     } else
                         break;
@@ -276,7 +293,6 @@ void PlayerConnection::sendToServer(Packet *packet) {
 
 void PlayerConnection::sendToServer(ubyte_t *packetData, varint_t packetLength) {
     try {
-        varint_t packetId = *packetData;
         if (!closed) {
             sWriteBuffer.clear();
             sWriteBuffer.putVarInt(packetLength);

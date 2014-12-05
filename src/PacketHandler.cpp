@@ -6,6 +6,7 @@
 #include "PacketEncryptionResponse.h"
 #include "PacketHandshake.h"
 #include "PacketLoginStart.h"
+#include "PacketLoginSuccess.h"
 #include "PacketPing.h"
 #include "PacketResponse.h"
 #include "PacketSetCompression.h"
@@ -32,7 +33,9 @@ void PacketHandler::handleHandshake(PacketHandshake *packet) {
                 connect->disconnect("Serveur trop ancien, merci d'utiliser au plus la 1.8.1");
             else
                 connect->phase = PlayerConnection::LOGIN;
+            break;
         default:
+            connect->disconnect("État invalide : " + std::to_string(packet->nextState));
             break;
     }
 }
@@ -94,7 +97,6 @@ void PacketHandler::handleEncryptionResponse(PacketEncryptionResponse *packet) {
                 compressPacket->threshold = 256;
                 connect->sendToClient(compressPacket);
                 connect->compression = true;
-                connect->phase = PlayerConnection::PLAY;
                 connect->connect();
                 PacketHandshake *handPacket = new PacketHandshake();
                 handPacket->protocolVersion = 47;
@@ -112,4 +114,12 @@ void PacketHandler::handleEncryptionResponse(PacketEncryptionResponse *packet) {
         }
     } else
         connect->disconnect("Nonce invalide !");
+}
+
+void PacketHandler::handleLoginSuccess(PacketLoginSuccess *packet) {
+    PacketLoginSuccess *successPacket = new PacketLoginSuccess();
+    successPacket->username = profile->name;
+    successPacket->uuid = profile->uuid;
+    connect->sendToClient(successPacket);
+    connect->phase = PlayerConnection::PLAY;
 }

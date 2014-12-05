@@ -129,7 +129,14 @@ Profile *Mojang::authentificate(string_t username, string_t serverId, ubytes_t s
         string_t body = resp.substr(start, 1 + end - start);
         json11::Json response = json11::Json::parse(body.data(), err);
         Profile *profile = new Profile();
-        profile->uuid = string_t(response["id"].string_value());
+        string_t uuid = response["id"].string_value();
+        ss.str("");
+        ss << uuid.substr(0, 8) << "-";
+        ss << uuid.substr(8, 4) << "-";
+        ss << uuid.substr(12, 4) << "-";
+        ss << uuid.substr(16, 4) << "-";
+        ss << uuid.substr(20, 12);
+        profile->uuid = ss.str();
         profile->name = string_t(response["name"].string_value());
         for (const json11::Json &element : response["properties"].array_items()) {
             Profile::Property property;
