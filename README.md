@@ -1,4 +1,4 @@
-[![Build Status](https://magnum.travis-ci.com/Minecraft-France/Proxy.svg?token=htYEgJf9D1vD8Lyz4aKb&branch=master)](https://magnum.travis-ci.com/Minecraft-France/Proxy)
+[![Build Status](https://magnum.travis-ci.com/MC-France/Proxy.svg?token=dqrkK3jKUCJA73wVyx1Y&branch=master)](https://magnum.travis-ci.com/Minecraft-France/Proxy)
 
 ### Installation
 Nous utilisons CMake, donc il suffit de quelques commandes :
