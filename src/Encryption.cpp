@@ -5,6 +5,8 @@
 #include "polarssl/x509.h"
 #include "polarssl/entropy.h"
 
+#include <cstring>
+
 void Encryption::initialize() {
     Logger::info() << "Génération de la paire de clefs" << std::endl;
     entropy_context entropy;
