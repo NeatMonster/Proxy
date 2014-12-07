@@ -331,9 +331,9 @@ void PlayerConnection::disconnect(string_t message) {
 
 void PlayerConnection::setup(ubytes_t *iv) {
     aes_init(&aes_enc);
-    memcpy(this->iv_enc, iv->data(), 16);
+    std::memcpy(this->iv_enc, iv->data(), 16);
     aes_setkey_enc(&aes_enc, this->iv_enc, 128);
     aes_init(&aes_dec);
-    memcpy(this->iv_dec, iv->data(), 16);
+    std::memcpy(this->iv_dec, iv->data(), 16);
     aes_setkey_enc(&aes_dec, this->iv_dec, 128);
 }

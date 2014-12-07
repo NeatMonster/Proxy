@@ -19,7 +19,7 @@ void Encryption::initialize() {
     ubyte_t buffer[1024];
     int length = pk_write_pubkey_der(&pk, buffer, sizeof(buffer));
     publicKey = ubytes_t(length);
-    memcpy(publicKey.data(), &buffer[1024 - length], length);
+    std::memcpy(publicKey.data(), &buffer[1024 - length], length);
     entropy_free(&entropy);
     pk_free(&pk);
 }

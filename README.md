@@ -9,6 +9,3 @@ Vous pouvez utiliser (entre autres) les valeurs suivantes pour le `generator`:
 * `"CodeBlocks - Unix Makefiles"` pour un projet Code::Blocks sous Linux ;
 * `"Xcode"` pour un projet Xcode ;
 * `"Unix Makefiles"` pour des classiques Unix Makefiles.
-* 
-
-Hello jenkins?
