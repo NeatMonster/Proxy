@@ -29,7 +29,7 @@ std::vector<PlayerConnection*> NetworkManager::getConnections() {
 }
 
 void NetworkManager::run() {
-    string_t ip = "127.0.0.1";
+    string_t ip = "0.0.0.0";
     ushort port = 25565;
     try {
         ServerSocket *socket = new ServerSocket(Socket::SocketAddress(ip, port));
