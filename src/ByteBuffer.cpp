@@ -233,7 +233,7 @@ void ByteBuffer::clear() {
 
 void ByteBuffer::compact() {
     if (position < limit)
-        memcpy(&buffer[0], &buffer[position], limit - position);
+        std::memcpy(&buffer[0], &buffer[position], limit - position);
     limit -= position;
     position = 0;
 }
