@@ -57,4 +57,3 @@ void Socket::close() {
         opened = false;
     }
 }
-

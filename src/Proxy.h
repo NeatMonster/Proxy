@@ -3,11 +3,17 @@
 
 #include "NetworkManager.h"
 
+#include <map>
+
 class Proxy {
 public:
     static Proxy *getProxy();
 
     static NetworkManager *getNetwork();
+
+    static Profile &getProfile(string_t);
+
+    static void addProfile(string_t, Profile);
 
     Proxy();
 
@@ -16,6 +22,7 @@ public:
 private:
     static Proxy *instance;
     NetworkManager *network;
+    std::map<string_t, Profile> uuids;
 
     void run();
 };

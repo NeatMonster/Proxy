@@ -8,18 +8,20 @@
 #include "PacketLoginStart.h"
 #include "PacketLoginSuccess.h"
 #include "PacketPing.h"
+#include "PacketPlayerListItem.h"
 #include "PacketResponse.h"
 #include "PacketSetCompression.h"
+#include "PacketSpawnPlayer.h"
 #include "PlayerConnection.h"
+#include "Proxy.h"
 
 #include "json11/json11.hpp"
+#include "polarssl/md5.h"
 
-PacketHandler::PacketHandler(PlayerConnection *connect) : connect(connect), profile(nullptr) {}
+#include <iomanip>
+#include <sstream>
 
-PacketHandler::~PacketHandler() {
-    if (profile != nullptr)
-        delete profile;
-}
+PacketHandler::PacketHandler(PlayerConnection *connect) : connect(connect) {}
 
 void PacketHandler::handleHandshake(PacketHandshake *packet) {
     switch (packet->nextState) {
@@ -86,13 +88,28 @@ void PacketHandler::handleEncryptionResponse(PacketEncryptionResponse *packet) {
         Encryption::decrypt(packet->sharedSecret.data(), sharedSecret.data(), &secretLength);
         connect->setup(&sharedSecret);
         try {
-            profile = Mojang::authentificate(username, serverId, sharedSecret, Encryption::getPublicKey());
-            if (profile == nullptr) {
-                connect->disconnect("Impossible de vérifier le nom d'utilisateur !");
-                Logger::warning() << "'" << username << "' a essayé de rejoindre avec une session invalide" << std::endl;
-            } else {
+            if (Mojang::authentificate(&profile, username, serverId, sharedSecret, Encryption::getPublicKey())) {
                 connect->encryption = true;
-                Logger::info() << "L'UUID du joueur " << profile->name << " est " << profile->uuid << std::endl;
+                string_t s = "OfflinePlayer:" + profile.name;
+                md5_context ctx;
+                md5_init(&ctx);
+                md5_starts(&ctx);
+                md5_update(&ctx, (ubyte_t*) s.data(), s.size());
+                ubytes_t hash(16);
+                md5_finish(&ctx, hash.data());
+                md5_free(&ctx);
+                hash[6] &= 0x0f;
+                hash[6] |= 0x30;
+                hash[8] &= 0x3f;
+                hash[8] |= 0x80;
+                std::stringstream ss;
+                for (int i = 0; i < 16; i++) {
+                    if (i == 4 || i == 6 || i == 8 || i == 10)
+                        ss << "-";
+                    ss << std::setw(2) << std::hex << std::setfill('0') << (int) hash[i];
+                }
+                Proxy::addProfile(ss.str(), profile);
+                Logger::info() << "L'UUID du joueur " << profile.name << " est " << profile.uuid << std::endl;
                 PacketSetCompression *compressPacket = new PacketSetCompression();
                 compressPacket->threshold = 256;
                 connect->sendToClient(compressPacket);
@@ -107,6 +124,9 @@ void PacketHandler::handleEncryptionResponse(PacketEncryptionResponse *packet) {
                 PacketLoginStart *loginPacket = new PacketLoginStart();
                 loginPacket->name = username;
                 connect->sendToServer(loginPacket);
+            } else {
+                connect->disconnect("Impossible de vérifier le nom d'utilisateur !");
+                Logger::warning() << "'" << username << "' a essayé de rejoindre avec une session invalide" << std::endl;
             }
         } catch (const Mojang::SSLException &e) {
             connect->disconnect("Les serveurs d'authentification sont hors-ligne, merci de réessayer plus tard");
@@ -116,10 +136,39 @@ void PacketHandler::handleEncryptionResponse(PacketEncryptionResponse *packet) {
         connect->disconnect("Nonce invalide !");
 }
 
-void PacketHandler::handleLoginSuccess(PacketLoginSuccess *packet) {
+void PacketHandler::handleLoginSuccess(PacketLoginSuccess*) {
     PacketLoginSuccess *successPacket = new PacketLoginSuccess();
-    successPacket->username = profile->name;
-    successPacket->uuid = profile->uuid;
+    successPacket->username = profile.name;
+    successPacket->uuid = profile.uuid;
     connect->sendToClient(successPacket);
     connect->phase = PlayerConnection::PLAY;
+}
+
+void PacketHandler::handlePlayerListItem(PacketPlayerListItem *packet) {
+    PacketPlayerListItem *listPacket = new PacketPlayerListItem();
+    listPacket->type = packet->type;
+    for (PacketPlayerListItem::Action &action : packet->actions) {
+        PacketPlayerListItem::Action newAction;
+        newAction.profile = Proxy::getProfile(action.profile.uuid);
+        newAction.gameMode = action.gameMode;
+        newAction.ping = action.ping;
+        newAction.hasDisplayName = action.hasDisplayName;
+        newAction.displayName = action.displayName;
+        listPacket->actions.push_back(newAction);
+    }
+    connect->sendToClient(listPacket);
+}
+
+void PacketHandler::handleSpawnPlayer(PacketSpawnPlayer *packet) {
+    PacketSpawnPlayer *spawnPacket = new PacketSpawnPlayer();
+    spawnPacket->entityId = packet->entityId;
+    spawnPacket->uuid = Proxy::getProfile(packet->uuid).uuid;
+    spawnPacket->x = packet->x;
+    spawnPacket->y = packet->y;
+    spawnPacket->z = packet->z;
+    spawnPacket->yaw = packet->yaw;
+    spawnPacket->pitch = packet->pitch;
+    spawnPacket->currentItem = packet->currentItem;
+    spawnPacket->metadata = packet->metadata;
+    connect->sendToClient(spawnPacket);
 }

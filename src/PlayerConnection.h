@@ -10,7 +10,6 @@
 
 #include <atomic>
 #include <thread>
-#include <map>
 
 class PlayerConnection {
     friend class PacketHandler;

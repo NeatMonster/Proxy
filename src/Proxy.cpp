@@ -16,7 +16,15 @@ Proxy *Proxy::getProxy() {
 }
 
 NetworkManager *Proxy::getNetwork() {
-    return getProxy()->network;
+    return instance->network;
+}
+
+Profile &Proxy::getProfile(string_t uuid) {
+    return instance->uuids[uuid];
+}
+
+void Proxy::addProfile(string_t uuid, Profile profile) {
+    instance->uuids[uuid] = profile;
 }
 
 Proxy::Proxy() {

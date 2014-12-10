@@ -9,6 +9,8 @@
 #include "PacketLoginStart.h"
 #include "PacketLoginSuccess.h"
 #include "PacketPing.h"
+#include "PacketPlayerListItem.h"
+#include "PacketSpawnPlayer.h"
 #include "PacketRequest.h"
 
 #include <typeinfo>
@@ -114,6 +116,7 @@ void PlayerConnection::runClient() {
                             disconnect("ID de paquet invalide : " + std::to_string(packetId));
                             break;
                         } else {
+                            packet->setPacketLength(packetLength);
                             packet->read(cReadBuffer);
                             Logger::info() << "<Client -> Proxy> " << typeid(*packet).name() << std::endl;
                             packet->handle(handler);
@@ -152,6 +155,13 @@ void PlayerConnection::runServer() {
                             case LOGIN:
                                 if (packetId == 0x02)
                                     packet = new PacketLoginSuccess();
+                                break;
+                            case PLAY:
+                                if (packetId == 0x0c)
+                                    packet = new PacketSpawnPlayer();
+                                else if (packetId == 0x38)
+                                    packet = new PacketPlayerListItem();
+                                break;
                             default:
                                 break;
                         }
@@ -161,6 +171,7 @@ void PlayerConnection::runServer() {
                             sReadBuffer.compact();
                             continue;
                         }
+                        packet->setPacketLength(packetLength);
                         packet->read(sReadBuffer);
                         Logger::info() << "<Proxy <- Serveur> " << typeid(*packet).name() << std::endl;
                         packet->handle(handler);

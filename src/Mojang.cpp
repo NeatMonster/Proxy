@@ -11,7 +11,8 @@
 #include <iomanip>
 #include <sstream>
 
-Profile *Mojang::authentificate(string_t username, string_t serverId, ubytes_t sharedSecret, ubytes_t publicKey) {
+bool Mojang::authentificate(Profile *profile, string_t username, string_t serverId,
+                            ubytes_t sharedSecret, ubytes_t publicKey) {
     sha1_context ctx;
     sha1_init(&ctx);
     sha1_starts(&ctx);
@@ -128,27 +129,27 @@ Profile *Mojang::authentificate(string_t username, string_t serverId, ubytes_t s
         size_t end = resp.rfind("}");
         string_t body = resp.substr(start, 1 + end - start);
         json11::Json response = json11::Json::parse(body.data(), err);
-        Profile *profile = new Profile();
-        string_t uuid = response["id"].string_value();
-        ss.str("");
-        ss << uuid.substr(0, 8) << "-";
-        ss << uuid.substr(8, 4) << "-";
-        ss << uuid.substr(12, 4) << "-";
-        ss << uuid.substr(16, 4) << "-";
-        ss << uuid.substr(20, 12);
-        profile->uuid = ss.str();
+        string_t uuid = string_t(response["id"].string_value());
+        uuid.insert(uuid.begin() + 8, '-');
+        uuid.insert(uuid.begin() + 13, '-');
+        uuid.insert(uuid.begin() + 18, '-');
+        uuid.insert(uuid.begin() + 23, '-');
+        profile->uuid = uuid;
         profile->name = string_t(response["name"].string_value());
         for (const json11::Json &element : response["properties"].array_items()) {
             Profile::Property property;
             property.name = string_t(element["name"].string_value());
             property.value = string_t(element["value"].string_value());
-            if (element["signature"].is_string())
+            if (element["signature"].is_string()) {
+                property.isSigned = true;
                 property.signature = string_t(element["signature"].string_value());
+            } else
+                property.isSigned = false;
             profile->properties.push_back(property);
         }
-        return profile;
+        return true;
     }
-    return nullptr;
+    return false;
 }
 
 const string_t Mojang::certificates =

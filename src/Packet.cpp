@@ -8,6 +8,10 @@ varint_t Packet::getPacketId() {
     return packetId;
 }
 
+void Packet::setPacketLength(varint_t packetLength) {
+    this->packetLength = packetLength;
+}
+
 void Packet::read(ByteBuffer&) {}
 
 void Packet::write(ByteBuffer&) {}

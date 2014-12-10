@@ -9,14 +9,14 @@ class PacketHandshake;
 class PacketLoginStart;
 class PacketLoginSuccess;
 class PacketPing;
+class PacketPlayerListItem;
 class PacketRequest;
+class PacketSpawnPlayer;
 class PlayerConnection;
 
 class PacketHandler {
 public:
     PacketHandler(PlayerConnection*);
-
-    ~PacketHandler();
 
     void handleHandshake(PacketHandshake*);
 
@@ -30,12 +30,16 @@ public:
 
     void handleLoginSuccess(PacketLoginSuccess*);
 
+    void handlePlayerListItem(PacketPlayerListItem*);
+
+    void handleSpawnPlayer(PacketSpawnPlayer*);
+
 private:
     PlayerConnection *connect;
     string_t username;
     string_t serverId;
     ubytes_t verifyToken;
-    Profile *profile;
+    Profile profile;
 };
 
 #endif /* defined(__Proxy__PacketHandler__) */

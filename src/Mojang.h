@@ -12,6 +12,7 @@ public:
         struct Property {
             string_t name;
             string_t value;
+            bool isSigned;
             string_t signature;
         };
 
@@ -24,7 +25,7 @@ public:
         SSLException(string_t s) : std::runtime_error(s) {}
     };
 
-    static Profile *authentificate(string_t, string_t, ubytes_t, ubytes_t);
+    static bool authentificate(Profile*, string_t, string_t, ubytes_t, ubytes_t);
 
 private:
     static const string_t certificates;
