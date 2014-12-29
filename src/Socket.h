@@ -10,6 +10,14 @@
 
 #define INVALID_HANDLE -1
 
+#ifndef MSG_NOSIGNAL
+const int MSG_NOSIGNAL = 0;
+#endif
+
+#ifndef SO_NOSIGPIPE
+const int SO_NOSIGPIPE = 0;
+#endif
+
 class Socket {
 public:
     class SocketAddress {

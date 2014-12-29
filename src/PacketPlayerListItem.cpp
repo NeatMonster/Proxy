@@ -7,7 +7,7 @@
 
 PacketPlayerListItem::PacketPlayerListItem() : Packet(0x38) {}
 
-void PacketPlayerListItem::read(ByteBuffer &buffer) {
+void PacketPlayerListItem::read(PacketBuffer &buffer) {
     varint_t type;
     buffer.getVarInt(type);
     this->type = (Type) type;
@@ -54,7 +54,7 @@ void PacketPlayerListItem::read(ByteBuffer &buffer) {
     }
 }
 
-void PacketPlayerListItem::write(ByteBuffer &buffer) {
+void PacketPlayerListItem::write(PacketBuffer &buffer) {
     buffer.putVarInt(type);
     buffer.putVarInt(actions.size());
     for (Action const &action : actions) {

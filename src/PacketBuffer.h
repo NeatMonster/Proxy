@@ -1,17 +1,17 @@
-#ifndef __Proxy__ByteBuffer__
-#define __Proxy__ByteBuffer__
+#ifndef __Proxy__PacketBuffer__
+#define __Proxy__PacketBuffer__
 
 #include "Types.h"
 
 #include <stdexcept>
 
-class ByteBuffer {
+class PacketBuffer {
 public:
     struct BufferUnderflowException : public std::runtime_error {
         BufferUnderflowException() : runtime_error("Pas assez de données.") {}
     };
 
-    ByteBuffer();
+    PacketBuffer();
 
     void get(ubyte_t*);
 
@@ -83,31 +83,29 @@ public:
 
     void clear();
 
-    void compact();
+    void reserve(size_t);
 
-    ubyte_t *getData();
+    ubyte_t *getArray();
 
     size_t getLimit();
+
+    size_t getMark();
 
     size_t getPosition();
 
     size_t getSize();
-
-    void rewind();
-
+    
     void setLimit(size_t);
 
+    void setMark(size_t);
+    
     void setPosition(size_t);
-
+    
     void setSize(size_t);
-
-    void shift(size_t);
-
+    
 private:
     ubytes_t buffer;
-    size_t position, limit;
-
-    void reverse(ubyte_t*, size_t);
+    size_t position, limit, mark;
 };
 
-#endif /* defined(__Proxy__ByteBuffer__) */
+#endif /* defined(__Proxy__PacketBuffer__) */

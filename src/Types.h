@@ -8,6 +8,7 @@
 #include <vector>
 
 #define BUFFER_SIZE 65535
+#define COMPRESSION_THRESHOLD 256
 
 typedef std::int8_t byte_t;
 typedef std::uint8_t ubyte_t;
@@ -23,18 +24,6 @@ typedef std::uint64_t ulong_t;
 typedef float float_t;
 typedef double double_t;
 typedef std::string string_t;
-
-struct InvalidArgumentException : std::runtime_error {
-    InvalidArgumentException(string_t s) : std::runtime_error(s) {}
-};
-
-template<class T>
-inline bool contains(T x, std::vector<T> vec) {
-    for (T y : vec)
-        if (x == y)
-            return true;
-    return false;
-}
 
 inline size_t getSize(uint_t i) {
     if (i < 128)

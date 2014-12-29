@@ -2,6 +2,6 @@
 
 PacketResponse::PacketResponse() : Packet(0x00) {}
 
-void PacketResponse::write(ByteBuffer &buffer) {
+void PacketResponse::write(PacketBuffer &buffer) {
     buffer.putString(response);
 }

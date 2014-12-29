@@ -4,11 +4,11 @@
 
 PacketPing::PacketPing() : Packet(0x01) {}
 
-void PacketPing::read(ByteBuffer &buffer) {
+void PacketPing::read(PacketBuffer &buffer) {
     buffer.getLong(time);
 }
 
-void PacketPing::write(ByteBuffer &buffer) {
+void PacketPing::write(PacketBuffer &buffer) {
     buffer.putLong(time);
 }
 

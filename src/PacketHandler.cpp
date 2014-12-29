@@ -109,9 +109,9 @@ void PacketHandler::handleEncryptionResponse(PacketEncryptionResponse *packet) {
                     ss << std::setw(2) << std::hex << std::setfill('0') << (int) hash[i];
                 }
                 Proxy::addProfile(ss.str(), profile);
-                Logger::info() << "L'UUID du joueur " << profile.name << " est " << profile.uuid << std::endl;
+                Logger() << "L'UUID du joueur " << profile.name << " est " << profile.uuid << std::endl;
                 PacketSetCompression *compressPacket = new PacketSetCompression();
-                compressPacket->threshold = 256;
+                compressPacket->threshold = COMPRESSION_THRESHOLD;
                 connect->sendToClient(compressPacket);
                 connect->compression = true;
                 connect->connect();
@@ -126,11 +126,11 @@ void PacketHandler::handleEncryptionResponse(PacketEncryptionResponse *packet) {
                 connect->sendToServer(loginPacket);
             } else {
                 connect->disconnect("Impossible de vérifier le nom d'utilisateur !");
-                Logger::warning() << "'" << username << "' a essayé de rejoindre avec une session invalide" << std::endl;
+                Logger(LogLevel::WARNING) << "'" << username << "' a essayé de rejoindre avec une session invalide" << std::endl;
             }
         } catch (const Mojang::SSLException &e) {
             connect->disconnect("Les serveurs d'authentification sont hors-ligne, merci de réessayer plus tard");
-            Logger::severe() << "Impossible de vérifier le nom d'utilisateur car les serveurs sont hors-ligne" << std::endl;
+            Logger(LogLevel::SEVERE) << "Impossible de vérifier le nom d'utilisateur car les serveurs sont hors-ligne" << std::endl;
         }
     } else
         connect->disconnect("Nonce invalide !");

@@ -10,7 +10,7 @@ public:
 
     PacketEncryptionResponse();
 
-    void read(ByteBuffer&);
+    void read(PacketBuffer&);
 
     void handle(PacketHandler*);
 };

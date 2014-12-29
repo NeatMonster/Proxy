@@ -11,7 +11,7 @@ public:
 
     PacketEncryptionRequest();
 
-    void write(ByteBuffer&);
+    void write(PacketBuffer&);
 };
 
 #endif /* defined(__Proxy__PacketEncryptionRequest__) */

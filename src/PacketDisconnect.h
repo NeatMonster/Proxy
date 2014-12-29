@@ -9,7 +9,7 @@ public:
 
     PacketDisconnect();
 
-    void write(ByteBuffer&);
+    void write(PacketBuffer&);
 };
 
 #endif /* defined(__Proxy__PacketDisconnect__) */

@@ -7,7 +7,7 @@ class PacketRequest : public Packet {
 public:
     PacketRequest();
 
-    void read(ByteBuffer&);
+    void read(PacketBuffer&);
 
     void handle(PacketHandler*);
 };

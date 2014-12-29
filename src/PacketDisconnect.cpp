@@ -2,6 +2,6 @@
 
 PacketDisconnect::PacketDisconnect() : Packet(0x00) {}
 
-void PacketDisconnect::write(ByteBuffer &buffer) {
+void PacketDisconnect::write(PacketBuffer &buffer) {
     buffer.putString(reason);
 }

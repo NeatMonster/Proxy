@@ -12,8 +12,8 @@ void Packet::setPacketLength(varint_t packetLength) {
     this->packetLength = packetLength;
 }
 
-void Packet::read(ByteBuffer&) {}
+void Packet::read(PacketBuffer&) {}
 
-void Packet::write(ByteBuffer&) {}
+void Packet::write(PacketBuffer&) {}
 
 void Packet::handle(PacketHandler*) {}

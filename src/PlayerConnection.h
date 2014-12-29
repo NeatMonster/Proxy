@@ -1,9 +1,9 @@
 #ifndef __Proxy__PlayerConnection__
 #define __Proxy__PlayerConnection__
 
-#include "ByteBuffer.h"
 #include "ClientSocket.h"
 #include "Packet.h"
+#include "PacketBuffer.h"
 #include "PacketHandler.h"
 
 #include "polarssl/aes.h"
@@ -29,6 +29,8 @@ public:
 
     bool isClosed();
 
+    string_t getName();
+
     void runClient();
 
     void runServer();
@@ -36,6 +38,8 @@ public:
     void sendToClient(Packet*);
 
     void sendToClient(ubyte_t*, varint_t);
+
+    void sendToClient(varint_t);
 
     void sendToServer(Packet*);
 
@@ -50,10 +54,12 @@ private:
     ClientSocket *sSocket;
     std::thread cThread;
     std::thread sThread;
-    ByteBuffer cReadBuffer;
-    ByteBuffer sReadBuffer;
-    ByteBuffer cWriteBuffer;
-    ByteBuffer sWriteBuffer;
+    PacketBuffer cReadBuffer;
+    PacketBuffer sReadBuffer;
+    PacketBuffer cWriteBuffer;
+    PacketBuffer sWriteBuffer;
+    PacketBuffer inflateBuffer;
+    PacketBuffer deflateBuffer;
     PacketHandler *handler;
     std::atomic<bool> closed;
     Phase phase;

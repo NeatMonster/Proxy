@@ -10,11 +10,9 @@ public:
         CompressionException(string_t s) : std::runtime_error(s) {}
     };
 
-    typedef std::pair<ubyte_t*, size_t> result_t;
+    static size_t deflateZLib(ubyte_t*, size_t, ubyte_t*, size_t);
 
-    static result_t deflateZLib(ubyte_t*, size_t);
-
-    static result_t inflateZlib(ubyte_t*, size_t);
+    static size_t inflateZlib(ubyte_t*, size_t, ubyte_t*, size_t);
 };
 
 #endif /* defined(__Proxy__Compression__) */

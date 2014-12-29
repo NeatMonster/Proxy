@@ -1,7 +1,7 @@
 #ifndef __Proxy__Packet__
 #define __Proxy__Packet__
 
-#include "ByteBuffer.h"
+#include "PacketBuffer.h"
 #include "Types.h"
 
 class PacketHandler;
@@ -16,9 +16,9 @@ public:
 
     void setPacketLength(varint_t);
 
-    virtual void read(ByteBuffer&);
+    virtual void read(PacketBuffer&);
 
-    virtual void write(ByteBuffer&);
+    virtual void write(PacketBuffer&);
 
     virtual void handle(PacketHandler*);
 

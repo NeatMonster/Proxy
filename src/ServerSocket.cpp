@@ -47,5 +47,13 @@ ClientSocket *ServerSocket::accept() {
         else
             throw SocketAcceptException(errno);
     }
+    if (SO_NOSIGPIPE != 0 && MSG_NOSIGNAL == 0) {
+        int tmp = true;
+        if (::setsockopt(newHandle, SOL_SOCKET, SO_NOSIGPIPE, (char*) &tmp, sizeof(tmp)) < 0) {
+            ::shutdown(newHandle, SHUT_RD);
+            ::close(newHandle);
+            throw SocketSetSockOptException(errno);
+        }
+    }
     return new ClientSocket(newHandle, address);
 }

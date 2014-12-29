@@ -7,7 +7,7 @@
 
 PacketSpawnPlayer::PacketSpawnPlayer() : Packet(0x0c) {}
 
-void PacketSpawnPlayer::read(ByteBuffer &buffer) {
+void PacketSpawnPlayer::read(PacketBuffer &buffer) {
     size_t start = buffer.getPosition();
     buffer.getVarInt(entityId);
     long_t msb, lsb;
@@ -31,7 +31,7 @@ void PacketSpawnPlayer::read(ByteBuffer &buffer) {
     buffer.getUBytes(metadata);
 }
 
-void PacketSpawnPlayer::write(ByteBuffer &buffer) {
+void PacketSpawnPlayer::write(PacketBuffer &buffer) {
     buffer.putVarInt(entityId);
     buffer.putLong(std::stoull(uuid.substr(0, 8)
                                + uuid.substr(9, 4)

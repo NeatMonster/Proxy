@@ -9,7 +9,7 @@ public:
 
     PacketResponse();
 
-    void write(ByteBuffer&);
+    void write(PacketBuffer&);
 };
 
 #endif /* defined(__Proxy__PacketResponse__) */

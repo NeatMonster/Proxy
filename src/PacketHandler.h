@@ -15,6 +15,8 @@ class PacketSpawnPlayer;
 class PlayerConnection;
 
 class PacketHandler {
+    friend class PlayerConnection;
+
 public:
     PacketHandler(PlayerConnection*);
 

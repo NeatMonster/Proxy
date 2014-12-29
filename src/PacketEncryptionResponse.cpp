@@ -4,7 +4,7 @@
 
 PacketEncryptionResponse::PacketEncryptionResponse() : Packet(0x01) {}
 
-void PacketEncryptionResponse::read(ByteBuffer &buffer) {
+void PacketEncryptionResponse::read(PacketBuffer &buffer) {
     varint_t secretLength;
     buffer.getVarInt(secretLength);
     sharedSecret = ubytes_t(secretLength);

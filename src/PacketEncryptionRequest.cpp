@@ -2,7 +2,7 @@
 
 PacketEncryptionRequest::PacketEncryptionRequest() : Packet(0x01) {}
 
-void PacketEncryptionRequest::write(ByteBuffer &buffer) {
+void PacketEncryptionRequest::write(PacketBuffer &buffer) {
     buffer.putString(serverId);
     buffer.putVarInt(publicKey.size());
     buffer.putUBytes(publicKey);

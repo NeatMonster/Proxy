@@ -1,5 +1,13 @@
 #include "ChatMessage.h"
 
+template<class T>
+inline bool contains(T x, std::vector<T> vec) {
+    for (T y : vec)
+        if (x == y)
+            return true;
+    return false;
+}
+
 ChatMessage::Color ChatMessage::Color::BLACK("black");
 ChatMessage::Color ChatMessage::Color::DARK_BLUE("dark_blue");
 ChatMessage::Color ChatMessage::Color::DARK_GREEN("dark_green");

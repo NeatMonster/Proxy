@@ -2,12 +2,12 @@
 
 PacketLoginSuccess::PacketLoginSuccess() : Packet(0x02) {}
 
-void PacketLoginSuccess::read(ByteBuffer &buffer) {
+void PacketLoginSuccess::read(PacketBuffer &buffer) {
     buffer.getString(uuid);
     buffer.getString(username);
 }
 
-void PacketLoginSuccess::write(ByteBuffer &buffer) {
+void PacketLoginSuccess::write(PacketBuffer &buffer) {
     buffer.putString(uuid);
     buffer.putString(username);
 }

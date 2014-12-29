@@ -4,11 +4,11 @@
 
 PacketLoginStart::PacketLoginStart() : Packet(0x00) {}
 
-void PacketLoginStart::read(ByteBuffer &buffer) {
+void PacketLoginStart::read(PacketBuffer &buffer) {
     buffer.getString(name);
 }
 
-void PacketLoginStart::write(ByteBuffer &buffer) {
+void PacketLoginStart::write(PacketBuffer &buffer) {
     buffer.putString(name);
 }
 

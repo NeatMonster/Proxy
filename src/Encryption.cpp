@@ -8,7 +8,7 @@
 #include <cstring>
 
 void Encryption::initialize() {
-    Logger::info() << "Génération de la paire de clefs" << std::endl;
+    Logger() << "Génération de la paire de clefs" << std::endl;
     entropy_context entropy;
     entropy_init(&entropy);
     ctr_drbg_init(&ctr_drbg, entropy_func, &entropy, (ubyte_t*) "nbuijmef", 8);

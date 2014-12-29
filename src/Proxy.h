@@ -3,7 +3,7 @@
 
 #include "NetworkManager.h"
 
-#include <map>
+#include <unordered_map>
 
 class Proxy {
 public:
@@ -22,7 +22,7 @@ public:
 private:
     static Proxy *instance;
     NetworkManager *network;
-    std::map<string_t, Profile> uuids;
+    std::unordered_map<string_t, Profile> uuids;
 
     void run();
 };
