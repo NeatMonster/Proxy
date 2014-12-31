@@ -2,6 +2,7 @@
 
 #include "Encryption.h"
 #include "Logger.h"
+#include "Proxy.h"
 #include "ServerSocket.h"
 
 NetworkManager::NetworkManager() {
@@ -29,8 +30,8 @@ std::vector<PlayerConnection*> NetworkManager::getConnections() {
 }
 
 void NetworkManager::run() {
-    string_t ip = "0.0.0.0";
-    ushort port = 25565;
+    string_t ip = Proxy::getConfig()->getProxyIP();
+    ushort port = Proxy::getConfig()->getProxyPort();
     try {
         ServerSocket *socket = new ServerSocket(Socket::SocketAddress(ip, port));
         socket->open();

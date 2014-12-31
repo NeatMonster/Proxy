@@ -1,6 +1,7 @@
 #ifndef __Proxy__Proxy__
 #define __Proxy__Proxy__
 
+#include "ConfigManager.h"
 #include "NetworkManager.h"
 
 #include <unordered_map>
@@ -8,6 +9,8 @@
 class Proxy {
 public:
     static Proxy *getProxy();
+
+    static ConfigManager *getConfig();
 
     static NetworkManager *getNetwork();
 
@@ -21,6 +24,7 @@ public:
 
 private:
     static Proxy *instance;
+    ConfigManager *config;
     NetworkManager *network;
     std::unordered_map<string_t, Profile> uuids;
 

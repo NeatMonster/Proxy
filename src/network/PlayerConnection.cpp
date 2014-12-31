@@ -12,6 +12,7 @@
 #include "PacketPlayerListItem.h"
 #include "PacketSpawnPlayer.h"
 #include "PacketRequest.h"
+#include "Proxy.h"
 
 #include <typeinfo>
 
@@ -287,10 +288,9 @@ void PlayerConnection::sendToServer(ubyte_t *packetData, varint_t packetLength) 
 }
 
 void PlayerConnection::connect() {
-    string_t ip = "127.0.0.1";
-    ushort port = 25566;
+    std::pair<string_t, ushort> serverInfo = Proxy::getConfig()->getServers()[Proxy::getConfig()->getDefaultServer()];
     try {
-        sSocket = new ClientSocket(Socket::SocketAddress(ip, port));
+        sSocket = new ClientSocket(Socket::SocketAddress(serverInfo.first, serverInfo.second));
         sSocket->open();
         sThread = std::thread(&PlayerConnection::runServer, this);
         Logger() << "<Proxy <-> Serveur> s'est connecté" << std::endl;

@@ -15,6 +15,10 @@ Proxy *Proxy::getProxy() {
     return instance;
 }
 
+ConfigManager *Proxy::getConfig() {
+    return instance->config;
+}
+
 NetworkManager *Proxy::getNetwork() {
     return instance->network;
 }
@@ -33,12 +37,14 @@ Proxy::Proxy() {
 }
 
 Proxy::~Proxy() {
+    delete config;
     delete network;
 }
 
 Proxy *Proxy::instance;
 
 void Proxy::run() {
+    config = new ConfigManager();
     network = new NetworkManager();
     while (true) {
         network->getConnections();

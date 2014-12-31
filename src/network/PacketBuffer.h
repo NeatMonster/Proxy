@@ -94,15 +94,15 @@ public:
     size_t getPosition();
 
     size_t getSize();
-    
+
     void setLimit(size_t);
 
     void setMark(size_t);
-    
+
     void setPosition(size_t);
-    
+
     void setSize(size_t);
-    
+
 private:
     ubytes_t buffer;
     size_t position, limit, mark;
