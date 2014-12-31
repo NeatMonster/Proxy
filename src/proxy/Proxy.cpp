@@ -7,7 +7,7 @@
 #include <thread>
 
 int main() {
-    new Proxy();
+    delete new Proxy();
     return 0;
 }
 
@@ -31,9 +31,16 @@ void Proxy::addProfile(string_t uuid, Profile profile) {
     instance->uuids[uuid] = profile;
 }
 
-Proxy::Proxy() {
+Proxy::Proxy() : running(true) {
     instance = this;
-    run();
+    Logger() << "Démarrage du proxy" << std::endl;
+    commands = new CommandManager();
+    config = new ConfigManager();
+    network = new NetworkManager();
+    if (network->start()) {
+        run();
+        network->stop();
+    }
 }
 
 Proxy::~Proxy() {
@@ -43,7 +50,8 @@ Proxy::~Proxy() {
 }
 
 void Proxy::stop() {
-    //TODO Implémenter l'extinction
+    running = false;
+    Logger() << "Extinction du proxy" << std::endl;
 }
 
 string_t Proxy::getName() {
@@ -57,13 +65,9 @@ void Proxy::sendMessage(ChatMessage &message) {
 Proxy *Proxy::instance;
 
 void Proxy::run() {
-    commands = new CommandManager();
-    config = new ConfigManager();
-    network = new NetworkManager();
-    while (true) {
+    while (running) {
+        network->cleanup();
         commands->handleCommands();
-        //TODO Trouver une autre façon de faire ça
-        network->getConnections();
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }

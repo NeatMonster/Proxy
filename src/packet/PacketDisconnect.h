@@ -2,12 +2,13 @@
 #define __Proxy__PacketDisconnect__
 
 #include "Packet.h"
+#include "PlayerConnection.h"
 
 class PacketDisconnect : public Packet {
 public:
     string_t reason;
 
-    PacketDisconnect();
+    PacketDisconnect(PlayerConnection::Phase);
 
     void write(PacketBuffer&);
 };

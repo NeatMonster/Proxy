@@ -25,7 +25,7 @@ public:
 
     Proxy();
 
-    ~Proxy();
+    virtual ~Proxy();
 
     void stop();
 
@@ -38,6 +38,7 @@ private:
     CommandManager *commands;
     ConfigManager *config;
     NetworkManager *network;
+    bool running;
     std::unordered_map<string_t, Profile> uuids;
 
     void run();

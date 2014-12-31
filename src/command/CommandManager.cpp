@@ -5,16 +5,19 @@
 #include "Proxy.h"
 
 #include <algorithm>
+#include <iostream>
+#include <unistd.h>
 #include <sstream>
 #include <vector>
+#include <sys/select.h>
+#include <sys/time.h>
+#include <sys/types.h>
 
 CommandManager::CommandManager() {
-    reader = new CommandReader(&queue);
     registerCommand(new CommandEnd());
 };
 
 CommandManager::~CommandManager() {
-    delete reader;
     for (auto command : commands)
         delete command.second;
 };
@@ -60,6 +63,19 @@ void CommandManager::performHelp(CommandSender *sender) {
 
 void CommandManager::handleCommands() {
     string_t command;
-    while (queue.tryPop(&command))
+    if (kbhit() > 0) {
+        std::getline(std::cin, command);
         processCommand(command, Proxy::getProxy());
+    }
+}
+
+int CommandManager::kbhit() {
+    struct timeval tv;
+    fd_set fds;
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+    FD_ZERO(&fds);
+    FD_SET(STDIN_FILENO, &fds);
+    select(STDIN_FILENO + 1, &fds, nullptr, nullptr, &tv);
+    return FD_ISSET(STDIN_FILENO, &fds);
 }

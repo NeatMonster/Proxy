@@ -2,6 +2,7 @@
 #define __Proxy__NetworkManager__
 
 #include "PlayerConnection.h"
+#include "ServerSocket.h"
 
 #include <thread>
 #include <vector>
@@ -12,10 +13,16 @@ public:
 
     ~NetworkManager();
 
-    std::vector<PlayerConnection*> getConnections();
+    bool start();
+
+    bool stop();
+
+    void cleanup();
 
 private:
+    bool running;
     std::thread thread;
+    ServerSocket *socket;
     std::vector<PlayerConnection*> connects;
 
     void run();

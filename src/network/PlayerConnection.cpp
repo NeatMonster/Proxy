@@ -303,8 +303,7 @@ void PlayerConnection::connect() {
 }
 
 void PlayerConnection::disconnect(string_t message) {
-    Logger() << "<" << getName() << " <-> Proxy> s'est déconnecté" << std::endl;
-    PacketDisconnect *packet = new PacketDisconnect();
+    PacketDisconnect *packet = new PacketDisconnect(phase);
     packet->reason = (Chat() << message).getJSON();
     sendToClient(packet);
     close();

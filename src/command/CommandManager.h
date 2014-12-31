@@ -2,8 +2,6 @@
 #define __Proxy__CommandManager__
 
 #include "Command.h"
-#include "CommandQueue.h"
-#include "CommandReader.h"
 #include "CommandSender.h"
 #include "Types.h"
 
@@ -23,10 +21,10 @@ public:
 
     void handleCommands();
 
+    int kbhit();
+
 private:
     std::map<string_t, Command*> commands;
-    CommandReader *reader;
-    CommandQueue queue;
 };
 
 #endif /* defined(__Proxy__CommandManager__) */
