@@ -15,17 +15,17 @@ public:
 
     string_t getProxyIP();
 
-    int_t getProxyPort();
+    ushort_t getProxyPort();
 
     string_t getDefaultServer();
 
-    std::map<string_t, std::pair<string_t, int_t>> getServers();
+    std::map<string_t, std::pair<string_t, ushort_t>> getServers();
 
 private:
     string_t proxyIP = "0.0.0.0";
-    int_t proxyPort = 25565;
+    ushort_t proxyPort = 25565;
     string_t defaultServer = "lobby";
-    std::map<string_t, std::pair<string_t, int_t>> servers = {
+    std::map<string_t, std::pair<string_t, ushort_t>> servers = {
         {"lobby", {"0.0.0.0", 25566}},
         {"game", {"0.0.0.0", 25567}}
     };

@@ -27,7 +27,7 @@ void ConfigManager::load() {
             string_t serverName = server.first;
             if (server.second.is_object()) {
                 string_t serverIP = server.second.object_items().begin()->first;
-                int_t serverPort = server.second.object_items().begin()->second.number_value();
+                ushort_t serverPort = server.second.object_items().begin()->second.number_value();
                 servers[serverName] = std::make_pair(serverIP, serverPort);
             }
         }
@@ -53,7 +53,7 @@ string_t ConfigManager::getProxyIP() {
     return proxyIP;
 }
 
-int_t ConfigManager::getProxyPort() {
+ushort_t ConfigManager::getProxyPort() {
     return proxyPort;
 }
 
@@ -61,6 +61,6 @@ string_t ConfigManager::getDefaultServer() {
     return defaultServer;
 }
 
-std::map<string_t, std::pair<string_t, int_t>> ConfigManager::getServers() {
+std::map<string_t, std::pair<string_t, ushort_t>> ConfigManager::getServers() {
     return servers;
 }

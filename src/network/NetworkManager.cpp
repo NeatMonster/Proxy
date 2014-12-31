@@ -31,7 +31,7 @@ std::vector<PlayerConnection*> NetworkManager::getConnections() {
 
 void NetworkManager::run() {
     string_t ip = Proxy::getConfig()->getProxyIP();
-    ushort port = Proxy::getConfig()->getProxyPort();
+    ushort_t port = Proxy::getConfig()->getProxyPort();
     try {
         ServerSocket *socket = new ServerSocket(Socket::SocketAddress(ip, port));
         socket->open();
