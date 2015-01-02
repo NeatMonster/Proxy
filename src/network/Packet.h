@@ -8,11 +8,15 @@ class PacketHandler;
 
 class Packet {
 public:
-    Packet(uint_t);
+    Packet(varint_t);
+
+    Packet(varint_t, varint_t);
 
     virtual ~Packet();
 
-    varint_t getPacketId();
+    varint_t getClientPacketId();
+
+    varint_t getServerPacketId();
 
     void setPacketLength(varint_t);
 
@@ -23,7 +27,8 @@ public:
     virtual void handle(PacketHandler*);
 
 protected:
-    varint_t packetId;
+    varint_t clientPacketId;
+    varint_t serverPacketId;
     varint_t packetLength;
 };
 

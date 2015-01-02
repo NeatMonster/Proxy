@@ -9,6 +9,7 @@
 #include "PacketLoginSuccess.h"
 #include "PacketPing.h"
 #include "PacketPlayerListItem.h"
+#include "PacketPluginMessage.h"
 #include "PacketResponse.h"
 #include "PacketSetCompression.h"
 #include "PacketSpawnPlayer.h"
@@ -171,4 +172,22 @@ void PacketHandler::handleSpawnPlayer(PacketSpawnPlayer *packet) {
     spawnPacket->currentItem = packet->currentItem;
     spawnPacket->metadata = packet->metadata;
     connect->sendToClient(spawnPacket);
+}
+
+void PacketHandler::handlePluginMessage(PacketPluginMessage *packet) {
+    if (packet->channel == "MF|GetServers") {
+        PacketPluginMessage *pluginPacket = new PacketPluginMessage();
+        pluginPacket->channel = packet->channel;
+        PacketBuffer buffer;
+        buffer.putVarInt(Proxy::getConfig()->getServers().size());
+        for (auto server : Proxy::getConfig()->getServers())
+            buffer.putString(server.first);
+        pluginPacket->data = ubytes_t(buffer.getArray(), buffer.getArray() + buffer.getSize());
+        connect->sendToServer(pluginPacket);
+    } else {
+        PacketPluginMessage *pluginPacket = new PacketPluginMessage();
+        pluginPacket->channel = packet->channel;
+        pluginPacket->data = packet->data;
+        connect->sendToClient(pluginPacket);
+    }
 }

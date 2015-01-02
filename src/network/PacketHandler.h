@@ -10,6 +10,7 @@ class PacketLoginStart;
 class PacketLoginSuccess;
 class PacketPing;
 class PacketPlayerListItem;
+class PacketPluginMessage;
 class PacketRequest;
 class PacketSpawnPlayer;
 class PlayerConnection;
@@ -35,6 +36,8 @@ public:
     void handlePlayerListItem(PacketPlayerListItem*);
 
     void handleSpawnPlayer(PacketSpawnPlayer*);
+
+    void handlePluginMessage(PacketPluginMessage*);
 
 private:
     PlayerConnection *connect;

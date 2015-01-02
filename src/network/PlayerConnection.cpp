@@ -10,6 +10,7 @@
 #include "PacketLoginSuccess.h"
 #include "PacketPing.h"
 #include "PacketPlayerListItem.h"
+#include "PacketPluginMessage.h"
 #include "PacketSpawnPlayer.h"
 #include "PacketRequest.h"
 #include "Proxy.h"
@@ -171,6 +172,8 @@ void PlayerConnection::runServer() {
                         default:
                             break;
                     }
+                    if (packetId == 0x3f)
+                        packet = new PacketPluginMessage();
                     if (packet == nullptr) {
                         sendToClient(sReadBuffer.getArray() + sReadBuffer.getMark(), packetLength);
                         sReadBuffer.setPosition(sReadBuffer.getMark() + packetLength);
@@ -199,7 +202,7 @@ void PlayerConnection::sendToClient(Packet *packet) {
     Logger(LogLevel::DEBUG) << "<" << getName() << " <- Proxy> " << typeid(*packet).name() << std::endl;
     cWriteBuffer.clear();
     cWriteBuffer.setPosition(6);
-    varint_t packetId = packet->getPacketId();
+    varint_t packetId = packet->getServerPacketId();
     cWriteBuffer.putVarInt(packetId);
     packet->write(cWriteBuffer);
     delete packet;
@@ -258,7 +261,7 @@ void PlayerConnection::sendToServer(Packet *packet) {
         Logger(LogLevel::DEBUG) << "<Proxy -> Serveur> " << typeid(*packet).name() << std::endl;
         sWriteBuffer.clear();
         sWriteBuffer.setPosition(5);
-        varint_t packetId = packet->getPacketId();
+        varint_t packetId = packet->getClientPacketId();
         sWriteBuffer.putVarInt(packetId);
         packet->write(sWriteBuffer);
         delete packet;
