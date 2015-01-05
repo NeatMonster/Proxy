@@ -12,7 +12,7 @@ ConfigManager::ConfigManager() {
 void ConfigManager::load() {
     std::ifstream input("config.json");
     std::stringstream buffer;
-    buffer << buffer.rdbuf();
+    buffer << input.rdbuf();
     input.close();
     string_t err;
     json11::Json config = json11::Json::parse(buffer.str(), err);

@@ -5,11 +5,13 @@
 #include "PacketEncryptionRequest.h"
 #include "PacketEncryptionResponse.h"
 #include "PacketHandshake.h"
+#include "PacketJoinGame.h"
 #include "PacketLoginStart.h"
 #include "PacketLoginSuccess.h"
 #include "PacketPing.h"
 #include "PacketPlayerListItem.h"
 #include "PacketPluginMessage.h"
+#include "PacketRespawn.h"
 #include "PacketResponse.h"
 #include "PacketSetCompression.h"
 #include "PacketSpawnPlayer.h"
@@ -27,7 +29,7 @@ PacketHandler::PacketHandler(PlayerConnection *connect) : connect(connect) {}
 void PacketHandler::handleHandshake(PacketHandshake *packet) {
     switch (packet->nextState) {
         case PlayerConnection::STATUS:
-            connect->phase = PlayerConnection::STATUS;
+            connect->cPhase = PlayerConnection::STATUS;
             break;
         case PlayerConnection::LOGIN:
             if (packet->protocolVersion < 47)
@@ -35,7 +37,7 @@ void PacketHandler::handleHandshake(PacketHandshake *packet) {
             else if (packet->protocolVersion > 47)
                 connect->disconnect("Serveur trop ancien, merci d'utiliser au plus la 1.8.1");
             else
-                connect->phase = PlayerConnection::LOGIN;
+                connect->cPhase = PlayerConnection::LOGIN;
             break;
         default:
             connect->disconnect("État invalide : " + std::to_string(packet->nextState));
@@ -57,13 +59,13 @@ void PacketHandler::handleRequest(PacketRequest*) {
         }}
     };
     packet->response = response.dump();
-    connect->sendToClient(packet);
+    connect->sendClient(packet);
 }
 
 void PacketHandler::handlePing(PacketPing *packet) {
     PacketPing *pingPacket = new PacketPing();
     pingPacket->time = packet->time;
-    connect->sendToClient(pingPacket);
+    connect->sendClient(pingPacket);
     connect->close();
 }
 
@@ -76,7 +78,7 @@ void PacketHandler::handleLoginStart(PacketLoginStart *packet) {
     verifyToken = {(ubyte_t) (x & 0xff), (ubyte_t) ((x >> 8) & 0xff),
         (ubyte_t) ((x >> 16) & 0xff), (ubyte_t) ((x >> 24) & 0xff)};
     encryptPacket->verifyToken = verifyToken;
-    connect->sendToClient(encryptPacket);
+    connect->sendClient(encryptPacket);
 }
 
 void PacketHandler::handleEncryptionResponse(PacketEncryptionResponse *packet) {
@@ -113,18 +115,9 @@ void PacketHandler::handleEncryptionResponse(PacketEncryptionResponse *packet) {
                 Logger() << "L'UUID du joueur " << profile.name << " est " << profile.uuid << std::endl;
                 PacketSetCompression *compressPacket = new PacketSetCompression();
                 compressPacket->threshold = COMPRESSION_THRESHOLD;
-                connect->sendToClient(compressPacket);
+                connect->sendClient(compressPacket);
                 connect->compression = true;
-                connect->connect();
-                PacketHandshake *handPacket = new PacketHandshake();
-                handPacket->protocolVersion = 47;
-                handPacket->serverAddress = "localhost";
-                handPacket->serverPort = 25566;
-                handPacket->nextState = PlayerConnection::LOGIN;
-                connect->sendToServer(handPacket);
-                PacketLoginStart *loginPacket = new PacketLoginStart();
-                loginPacket->name = username;
-                connect->sendToServer(loginPacket);
+                connect->connect(Proxy::getConfig()->getServers()[Proxy::getConfig()->getDefaultServer()]);
             } else {
                 connect->disconnect("Impossible de vérifier le nom d'utilisateur !");
                 Logger(LogLevel::WARNING) << "'" << username << "' a essayé de rejoindre avec une session invalide" << std::endl;
@@ -138,11 +131,13 @@ void PacketHandler::handleEncryptionResponse(PacketEncryptionResponse *packet) {
 }
 
 void PacketHandler::handleLoginSuccess(PacketLoginSuccess*) {
-    PacketLoginSuccess *successPacket = new PacketLoginSuccess();
-    successPacket->username = profile.name;
-    successPacket->uuid = profile.uuid;
-    connect->sendToClient(successPacket);
-    connect->phase = PlayerConnection::PLAY;
+    if (connect->cPhase != PlayerConnection::PLAY) {
+        PacketLoginSuccess *successPacket = new PacketLoginSuccess();
+        successPacket->username = profile.name;
+        successPacket->uuid = profile.uuid;
+        connect->sendClient(successPacket);
+    }
+    connect->sPhase = PlayerConnection::PLAY;
 }
 
 void PacketHandler::handlePlayerListItem(PacketPlayerListItem *packet) {
@@ -157,7 +152,7 @@ void PacketHandler::handlePlayerListItem(PacketPlayerListItem *packet) {
         newAction.displayName = action.displayName;
         listPacket->actions.push_back(newAction);
     }
-    connect->sendToClient(listPacket);
+    connect->sendClient(listPacket);
 }
 
 void PacketHandler::handleSpawnPlayer(PacketSpawnPlayer *packet) {
@@ -171,7 +166,7 @@ void PacketHandler::handleSpawnPlayer(PacketSpawnPlayer *packet) {
     spawnPacket->pitch = packet->pitch;
     spawnPacket->currentItem = packet->currentItem;
     spawnPacket->metadata = packet->metadata;
-    connect->sendToClient(spawnPacket);
+    connect->sendClient(spawnPacket);
 }
 
 void PacketHandler::handlePluginMessage(PacketPluginMessage *packet) {
@@ -183,11 +178,39 @@ void PacketHandler::handlePluginMessage(PacketPluginMessage *packet) {
         for (auto server : Proxy::getConfig()->getServers())
             buffer.putString(server.first);
         pluginPacket->data = ubytes_t(buffer.getArray(), buffer.getArray() + buffer.getSize());
-        connect->sendToServer(pluginPacket);
+        connect->sendServer(pluginPacket);
+    } else if (packet->channel == "MF|Connect") {
+        PacketBuffer buffer;
+        buffer.putUBytes(packet->data);
+        buffer.setPosition(0);
+        string_t server;
+        buffer.getString(server);
+        connect->connect(Proxy::getConfig()->getServers()[server]);
     } else {
         PacketPluginMessage *pluginPacket = new PacketPluginMessage();
         pluginPacket->channel = packet->channel;
         pluginPacket->data = packet->data;
-        connect->sendToClient(pluginPacket);
+        connect->sendClient(pluginPacket);
+    }
+}
+
+void PacketHandler::handleJoinGame(PacketJoinGame *packet) {
+    if (connect->cPhase == PlayerConnection::PLAY) {
+        PacketRespawn *respawnPacket = new PacketRespawn();
+        respawnPacket->dimension = packet->dimension;
+        respawnPacket->difficulty = packet->difficulty;
+        respawnPacket->gamemode = packet->gamemode;
+        respawnPacket->levelType = packet->levelType;
+        connect->sendClient(respawnPacket);
+    } else {
+        connect->cPhase = PlayerConnection::PLAY;
+        PacketJoinGame *joinPacket = new PacketJoinGame();
+        joinPacket->entityId = packet->entityId;
+        joinPacket->gamemode = packet->gamemode;
+        joinPacket->dimension = packet->dimension;
+        joinPacket->maxPlayers = packet->maxPlayers;
+        joinPacket->levelType = packet->levelType;
+        joinPacket->reducedDebugInfo = packet->reducedDebugInfo;
+        connect->sendClient(joinPacket);
     }
 }

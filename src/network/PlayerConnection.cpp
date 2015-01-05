@@ -6,6 +6,7 @@
 #include "PacketDisconnect.h"
 #include "PacketEncryptionResponse.h"
 #include "PacketHandshake.h"
+#include "PacketJoinGame.h"
 #include "PacketLoginStart.h"
 #include "PacketLoginSuccess.h"
 #include "PacketPing.h"
@@ -17,8 +18,8 @@
 
 #include <typeinfo>
 
-PlayerConnection::PlayerConnection(ClientSocket *socket) : cSocket(socket), sSocket(nullptr),
-        closed(false), phase(HANDSHAKE), encryption(false), compression(false) {
+PlayerConnection::PlayerConnection(ClientSocket *socket) : cSocket(socket), sSocket(nullptr), cClosed(false),
+        sClosed(true), cPhase(HANDSHAKE), sPhase(HANDSHAKE), encryption(false), compression(false) {
     cThread = std::thread(&PlayerConnection::runClient, this);
     handler = new PacketHandler(this);
 }
@@ -37,20 +38,24 @@ void PlayerConnection::join() {
 }
 
 void PlayerConnection::close() {
-    if (!closed) {
-        closed = true;
+    if (!cClosed)
         try {
             cSocket->close();
+            cClosed = true;
         } catch (const Socket::SocketCloseException &e) {}
-        if (sSocket != nullptr)
-            try {
-                sSocket->close();
-            } catch (const Socket::SocketCloseException &e) {}
-    }
+    closeServer();
+}
+
+void PlayerConnection::closeServer() {
+    if (!sClosed)
+        try {
+            sSocket->close();
+            sClosed = true;
+        } catch (const Socket::SocketCloseException &e) {}
 }
 
 bool PlayerConnection::isClosed() {
-    return closed;
+    return cClosed && sClosed;
 }
 
 string_t PlayerConnection::getName() {
@@ -62,7 +67,7 @@ string_t PlayerConnection::getName() {
 void PlayerConnection::runClient() {
     try {
         size_t position = 0;
-        while (!closed) {
+        while (!cClosed) {
             cReadBuffer.reserve(cReadBuffer.getLimit() + BUFFER_SIZE);
             size_t rcvd = cSocket->receive(cReadBuffer.getArray() + cReadBuffer.getLimit(), BUFFER_SIZE);
             cReadBuffer.setLimit(cReadBuffer.getLimit() + rcvd);
@@ -96,7 +101,7 @@ void PlayerConnection::runClient() {
                     varint_t packetId;
                     buffer->getVarInt(packetId);
                     Packet *packet = nullptr;
-                    switch (phase) {
+                    switch (cPhase.load()) {
                         case HANDSHAKE:
                             if (packetId == 0x00)
                                 packet = new PacketHandshake();
@@ -115,8 +120,9 @@ void PlayerConnection::runClient() {
                         default:
                             break;
                     }
-                    if (phase == PLAY) {
-                        sendToServer(buffer->getArray() + buffer->getMark(), packetLength);
+                    if (cPhase == PLAY) {
+                        if (sPhase == PLAY)
+                            sendServer(buffer->getArray() + buffer->getMark(), packetLength);
                         buffer->setPosition(buffer->getMark() + packetLength);
                     } else if (packet == nullptr) {
                         disconnect("ID de paquet invalide : " + std::to_string(packetId));
@@ -143,7 +149,7 @@ void PlayerConnection::runClient() {
 void PlayerConnection::runServer() {
     try {
         size_t position = 0;
-        while (!closed) {
+        while (!sClosed) {
             sReadBuffer.reserve(sReadBuffer.getLimit() + BUFFER_SIZE);
             size_t rcvd = sSocket->receive(sReadBuffer.getArray() + sReadBuffer.getLimit(), BUFFER_SIZE);
             sReadBuffer.setLimit(sReadBuffer.getLimit() + rcvd);
@@ -158,13 +164,15 @@ void PlayerConnection::runServer() {
                     varint_t packetId;
                     sReadBuffer.getVarInt(packetId);
                     Packet *packet = nullptr;
-                    switch (phase) {
+                    switch (sPhase.load()) {
                         case LOGIN:
                             if (packetId == 0x02)
                                 packet = new PacketLoginSuccess();
                             break;
                         case PLAY:
-                            if (packetId == 0x0c)
+                            if (packetId == 0x01)
+                                packet = new PacketJoinGame();
+                            else if (packetId == 0x0c)
                                 packet = new PacketSpawnPlayer();
                             else if (packetId == 0x38)
                                 packet = new PacketPlayerListItem();
@@ -175,7 +183,7 @@ void PlayerConnection::runServer() {
                     if (packetId == 0x3f)
                         packet = new PacketPluginMessage();
                     if (packet == nullptr) {
-                        sendToClient(sReadBuffer.getArray() + sReadBuffer.getMark(), packetLength);
+                        sendClient(sReadBuffer.getArray() + sReadBuffer.getMark(), packetLength);
                         sReadBuffer.setPosition(sReadBuffer.getMark() + packetLength);
                     } else {
                         packet->setPacketLength(packetLength);
@@ -191,13 +199,13 @@ void PlayerConnection::runServer() {
             } catch (const PacketBuffer::BufferUnderflowException &e) {}
         }
     } catch (const ClientSocket::SocketReadException &e) {
-        Logger() << "<Proxy <-> Server> s'est déconnecté" << std::endl;
+        Logger() << "<Proxy <-> Serveur> s'est déconnecté" << std::endl;
         close();
     }
 }
 
-void PlayerConnection::sendToClient(Packet *packet) {
-    if (closed)
+void PlayerConnection::sendClient(Packet *packet) {
+    if (cClosed)
         return;
     Logger(LogLevel::DEBUG) << "<" << getName() << " <- Proxy> " << typeid(*packet).name() << std::endl;
     cWriteBuffer.clear();
@@ -206,19 +214,19 @@ void PlayerConnection::sendToClient(Packet *packet) {
     cWriteBuffer.putVarInt(packetId);
     packet->write(cWriteBuffer);
     delete packet;
-    sendToClient(cWriteBuffer.getLimit() - 6);
+    sendClient(cWriteBuffer.getLimit() - 6);
 }
 
-void PlayerConnection::sendToClient(ubyte_t *packetData, varint_t packetLength) {
-    if (closed)
+void PlayerConnection::sendClient(ubyte_t *packetData, varint_t packetLength) {
+    if (cClosed)
         return;
     cWriteBuffer.clear();
     cWriteBuffer.setPosition(6);
     cWriteBuffer.put(packetData, packetLength);
-    sendToClient(packetLength);
+    sendClient(packetLength);
 }
 
-void PlayerConnection::sendToClient(varint_t packetLength) {
+void PlayerConnection::sendClient(varint_t packetLength) {
     try {
         cWriteBuffer.setPosition(6);
         PacketBuffer *buffer = &cWriteBuffer;
@@ -254,9 +262,9 @@ void PlayerConnection::sendToClient(varint_t packetLength) {
     }
 }
 
-void PlayerConnection::sendToServer(Packet *packet) {
+void PlayerConnection::sendServer(Packet *packet) {
     try {
-        if (closed)
+        if (sClosed)
             return;
         Logger(LogLevel::DEBUG) << "<Proxy -> Serveur> " << typeid(*packet).name() << std::endl;
         sWriteBuffer.clear();
@@ -276,9 +284,9 @@ void PlayerConnection::sendToServer(Packet *packet) {
     }
 }
 
-void PlayerConnection::sendToServer(ubyte_t *packetData, varint_t packetLength) {
+void PlayerConnection::sendServer(ubyte_t *packetData, varint_t packetLength) {
     try {
-        if (closed)
+        if (sClosed)
             return;
         sWriteBuffer.clear();
         sWriteBuffer.putVarInt(packetLength);
@@ -290,12 +298,31 @@ void PlayerConnection::sendToServer(ubyte_t *packetData, varint_t packetLength) 
     }
 }
 
-void PlayerConnection::connect() {
-    std::pair<string_t, ushort> serverInfo = Proxy::getConfig()->getServers()[Proxy::getConfig()->getDefaultServer()];
+void PlayerConnection::connect(std::pair<string_t, u_short> server) {
     try {
-        sSocket = new ClientSocket(Socket::SocketAddress(serverInfo.first, serverInfo.second));
+        if (!sClosed) {
+            try {
+                sSocket->close();
+            } catch (const Socket::SocketCloseException &e) {}
+            Logger() << "<Proxy <-> Serveur> s'est déconnecté" << std::endl;
+            sReadBuffer.clear();
+            sPhase = HANDSHAKE;
+        }
+        sSocket = new ClientSocket(Socket::SocketAddress(server.first, server.second));
         sSocket->open();
-        sThread = std::thread(&PlayerConnection::runServer, this);
+        if (sClosed) {
+            sClosed = false;
+            sThread = std::thread(&PlayerConnection::runServer, this);
+        }
+        PacketHandshake *handPacket = new PacketHandshake();
+        handPacket->protocolVersion = 47;
+        handPacket->serverAddress = server.first;
+        handPacket->serverPort = server.second;
+        handPacket->nextState = sPhase = LOGIN;
+        sendServer(handPacket);
+        PacketLoginStart *loginPacket = new PacketLoginStart();
+        loginPacket->name = handler->username;
+        sendServer(loginPacket);
         Logger() << "<Proxy <-> Serveur> s'est connecté" << std::endl;
     } catch (const ClientSocket::SocketConnectException &e) {
         Logger(LogLevel::WARNING) << "IMPOSSIBLE DE SE CONNECTER AU SERVEUR !" << std::endl;
@@ -306,9 +333,12 @@ void PlayerConnection::connect() {
 }
 
 void PlayerConnection::disconnect(string_t message) {
-    PacketDisconnect *packet = new PacketDisconnect(phase);
+    PacketDisconnect *packet = new PacketDisconnect(cPhase);
     packet->reason = (Chat() << message).getJSON();
-    sendToClient(packet);
+    sendClient(packet);
+    packet = new PacketDisconnect(sPhase);
+    packet->reason = (Chat() << message).getJSON();
+    sendServer(packet);
     close();
 }
 

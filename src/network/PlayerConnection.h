@@ -27,6 +27,8 @@ public:
 
     void close();
 
+    void closeServer();
+
     bool isClosed();
 
     string_t getName();
@@ -35,17 +37,17 @@ public:
 
     void runServer();
 
-    void sendToClient(Packet*);
+    void sendClient(Packet*);
 
-    void sendToClient(ubyte_t*, varint_t);
+    void sendClient(ubyte_t*, varint_t);
 
-    void sendToClient(varint_t);
+    void sendClient(varint_t);
 
-    void sendToServer(Packet*);
+    void sendServer(Packet*);
 
-    void sendToServer(ubyte_t*, varint_t);
+    void sendServer(ubyte_t*, varint_t);
 
-    void connect();
+    void connect(std::pair<string_t, ushort_t>);
 
     void disconnect(string_t);
 
@@ -61,8 +63,10 @@ private:
     PacketBuffer inflateBuffer;
     PacketBuffer deflateBuffer;
     PacketHandler *handler;
-    std::atomic<bool> closed;
-    Phase phase;
+    std::atomic<bool> cClosed;
+    std::atomic<bool> sClosed;
+    std::atomic<Phase> cPhase;
+    std::atomic<Phase> sPhase;
     bool encryption;
     bool compression;
     ubyte_t iv_enc[16];

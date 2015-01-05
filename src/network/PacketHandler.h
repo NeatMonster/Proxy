@@ -6,6 +6,7 @@
 
 class PacketEncryptionResponse;
 class PacketHandshake;
+class PacketJoinGame;
 class PacketLoginStart;
 class PacketLoginSuccess;
 class PacketPing;
@@ -38,6 +39,8 @@ public:
     void handleSpawnPlayer(PacketSpawnPlayer*);
 
     void handlePluginMessage(PacketPluginMessage*);
+
+    void handleJoinGame(PacketJoinGame*);
 
 private:
     PlayerConnection *connect;
