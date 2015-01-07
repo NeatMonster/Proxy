@@ -5,6 +5,7 @@
 #include "CommandManager.h"
 #include "CommandSender.h"
 #include "ConfigManager.h"
+#include "Database.h"
 #include "NetworkManager.h"
 
 #include <unordered_map>
@@ -16,6 +17,8 @@ public:
     static ConfigManager *getConfig();
 
     static CommandManager *getCommands();
+
+    static Database *getDatabase();
 
     static NetworkManager *getNetwork();
 
@@ -37,6 +40,7 @@ private:
     static Proxy *instance;
     CommandManager *commands;
     ConfigManager *config;
+    Database *database;
     NetworkManager *network;
     bool running;
     std::unordered_map<string_t, Profile> uuids;

@@ -19,6 +19,10 @@ ConfigManager *Proxy::getConfig() {
     return instance->config;
 }
 
+Database *Proxy::getDatabase() {
+    return instance->database;
+}
+
 NetworkManager *Proxy::getNetwork() {
     return instance->network;
 }
@@ -36,8 +40,9 @@ Proxy::Proxy() : running(true) {
     Logger() << "Démarrage du proxy" << std::endl;
     commands = new CommandManager();
     config = new ConfigManager();
+    database = new Database();
     network = new NetworkManager();
-    if (network->start()) {
+    if (database->run() && network->start()) {
         run();
         network->stop();
     }
@@ -46,6 +51,7 @@ Proxy::Proxy() : running(true) {
 Proxy::~Proxy() {
     delete commands;
     delete config;
+    delete database;
     delete network;
 }
 
