@@ -10,9 +10,7 @@
 #include "PacketLoginStart.h"
 #include "PacketLoginSuccess.h"
 #include "PacketPing.h"
-#include "PacketPlayerListItem.h"
 #include "PacketPluginMessage.h"
-#include "PacketSpawnPlayer.h"
 #include "PacketRequest.h"
 #include "Proxy.h"
 
@@ -59,9 +57,9 @@ bool PlayerConnection::isClosed() {
 }
 
 string_t PlayerConnection::getName() {
-    if (handler->username.empty())
+    if (handler->profile == nullptr)
         return "/" + cSocket->getIP() + ":" + std::to_string(cSocket->getPort());
-    return handler->username;
+    return handler->profile->getName();
 }
 
 void PlayerConnection::runClient() {
@@ -172,10 +170,6 @@ void PlayerConnection::runServer() {
                         case PLAY:
                             if (packetId == 0x01)
                                 packet = new PacketJoinGame();
-                            else if (packetId == 0x0c)
-                                packet = new PacketSpawnPlayer();
-                            else if (packetId == 0x38)
-                                packet = new PacketPlayerListItem();
                             break;
                         default:
                             break;
@@ -321,7 +315,7 @@ void PlayerConnection::connect(std::pair<string_t, u_short> server) {
         handPacket->nextState = sPhase = LOGIN;
         sendServer(handPacket);
         PacketLoginStart *loginPacket = new PacketLoginStart();
-        loginPacket->name = handler->username;
+        loginPacket->name = handler->profile->getName();
         sendServer(loginPacket);
         Logger() << "<Proxy <-> Serveur> s'est connecté" << std::endl;
     } catch (const ClientSocket::SocketConnectException &e) {

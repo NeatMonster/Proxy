@@ -22,10 +22,6 @@ public:
 
     static NetworkManager *getNetwork();
 
-    static Profile &getProfile(string_t);
-
-    static void addProfile(string_t, Profile);
-
     Proxy();
 
     virtual ~Proxy();
@@ -43,7 +39,6 @@ private:
     Database *database;
     NetworkManager *network;
     bool running;
-    std::unordered_map<string_t, Profile> uuids;
 
     void run();
 };

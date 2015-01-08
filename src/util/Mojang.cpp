@@ -11,8 +11,7 @@
 #include <iomanip>
 #include <sstream>
 
-bool Mojang::authentificate(Profile *profile, string_t username, string_t serverId,
-                            ubytes_t sharedSecret, ubytes_t publicKey) {
+bool Mojang::authentificate(Profile *user, string_t serverId, ubytes_t sharedSecret, ubytes_t publicKey) {
     sha1_context ctx;
     sha1_init(&ctx);
     sha1_starts(&ctx);
@@ -89,7 +88,7 @@ bool Mojang::authentificate(Profile *profile, string_t username, string_t server
     }
 
     ss.str("");
-    ss << "GET /session/minecraft/hasJoined?username=" << username << "&serverId=" << hash << " HTTP/1.1\r\n";
+    ss << "GET /session/minecraft/hasJoined?username=" << user->getName() << "&serverId=" << hash << " HTTP/1.1\r\n";
     ss << "Host: sessionserver.mojang.com\r\n";
     ss << "Connection: close\r\n";
     ss << "\r\n";
@@ -134,8 +133,9 @@ bool Mojang::authentificate(Profile *profile, string_t username, string_t server
         uuid.insert(uuid.begin() + 13, '-');
         uuid.insert(uuid.begin() + 18, '-');
         uuid.insert(uuid.begin() + 23, '-');
-        profile->uuid = uuid;
-        profile->name = string_t(response["name"].string_value());
+        user->uuid = uuid;
+        user->name = string_t(response["name"].string_value());
+        user->properties.clear();
         for (const json11::Json &element : response["properties"].array_items()) {
             Profile::Property property;
             property.name = string_t(element["name"].string_value());
@@ -145,7 +145,7 @@ bool Mojang::authentificate(Profile *profile, string_t username, string_t server
                 property.signature = string_t(element["signature"].string_value());
             } else
                 property.isSigned = false;
-            profile->properties.push_back(property);
+            user->properties.push_back(property);
         }
         return true;
     }

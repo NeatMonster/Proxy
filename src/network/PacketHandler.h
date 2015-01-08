@@ -10,10 +10,8 @@ class PacketJoinGame;
 class PacketLoginStart;
 class PacketLoginSuccess;
 class PacketPing;
-class PacketPlayerListItem;
 class PacketPluginMessage;
 class PacketRequest;
-class PacketSpawnPlayer;
 class PlayerConnection;
 
 class PacketHandler {
@@ -21,6 +19,8 @@ class PacketHandler {
 
 public:
     PacketHandler(PlayerConnection*);
+
+    ~PacketHandler();
 
     void handleHandshake(PacketHandshake*);
 
@@ -34,20 +34,15 @@ public:
 
     void handleLoginSuccess(PacketLoginSuccess*);
 
-    void handlePlayerListItem(PacketPlayerListItem*);
-
-    void handleSpawnPlayer(PacketSpawnPlayer*);
-
     void handlePluginMessage(PacketPluginMessage*);
 
     void handleJoinGame(PacketJoinGame*);
 
 private:
     PlayerConnection *connect;
-    string_t username;
     string_t serverId;
     ubytes_t verifyToken;
-    Profile profile;
+    Profile *profile;
 };
 
 #endif /* defined(__Proxy__PacketHandler__) */
