@@ -16,7 +16,7 @@
 #include "PlayerConnection.h"
 #include "Proxy.h"
 
-#include "json11/json11.hpp"
+#include "mongo/bson/bson.h"
 #include "polarssl/md5.h"
 
 #include <iomanip>
@@ -50,18 +50,11 @@ void PacketHandler::handleHandshake(PacketHandshake *packet) {
 
 void PacketHandler::handleRequest(PacketRequest*) {
     PacketResponse *packet = new PacketResponse();
-    json11::Json response = json11::Json::object {
-        {"version", json11::Json::object {
-            {"name", "1.8.1"},
-            {"protocol", 47}
-        }}, {"players", json11::Json::object {
-            {"max", 20},
-            {"online", 0}
-        }}, {"description", json11::Json::object {
-            {"text", "A Minecraft Server"}
-        }}
-    };
-    packet->response = response.dump();
+    mongo::BSONObj response = BSON(
+        "version" << BSON("name" << "1.8.1" << "protocol" << 47)
+        << "players" << BSON("max" << 20 << "online" << 0)
+        << "description" << BSON("text" << "A Minecraft Server"));
+    packet->response = response.jsonString();
     connect->sendClient(packet);
 }
 
@@ -102,7 +95,9 @@ void PacketHandler::handleEncryptionResponse(PacketEncryptionResponse *packet) {
                 compressPacket->threshold = COMPRESSION_THRESHOLD;
                 connect->sendClient(compressPacket);
                 connect->compression = true;
-                connect->connect(Proxy::getConfig()->getServers()[Proxy::getConfig()->getDefaultServer()]);
+                //TODO Passer par le Mongo pour connaître le serveur par défaut
+                //connect->connect(Proxy::getConfig()->getServers()[Proxy::getConfig()->getDefaultServer()]);
+                connect->connect({"0.0.0.0", 25566});
             } else {
                 connect->disconnect("Impossible de vérifier le nom d'utilisateur !");
                 Logger(LogLevel::WARNING) << "'" << profile->getName() << "' a essayé de rejoindre avec une session invalide" << std::endl;
@@ -126,7 +121,8 @@ void PacketHandler::handleLoginSuccess(PacketLoginSuccess*) {
 }
 
 void PacketHandler::handlePluginMessage(PacketPluginMessage *packet) {
-    if (packet->channel == "MF|GetServers") {
+    //TODO Passer par le Mongo pour connaître les serveurs
+    /*if (packet->channel == "MF|GetServers") {
         PacketPluginMessage *pluginPacket = new PacketPluginMessage();
         pluginPacket->channel = packet->channel;
         PacketBuffer buffer;
@@ -147,7 +143,7 @@ void PacketHandler::handlePluginMessage(PacketPluginMessage *packet) {
         pluginPacket->channel = packet->channel;
         pluginPacket->data = packet->data;
         connect->sendClient(pluginPacket);
-    }
+    }*/
 }
 
 void PacketHandler::handleJoinGame(PacketJoinGame *packet) {

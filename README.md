@@ -1,11 +1,5 @@
 ### Installation
-Nous utilisons CMake, donc il suffit de quelques commandes :
+Le script d'installation se charge dorénavant de tout. Il télécharge et compile les dépendences (MongoDB, qui requiert Boost, PolarSSL et zlib). CMake est ensuite utilisé pour générer des Makefiles Unix ou un espace de travail pour l'IDE de votre choix.
 ```
-mkdir bin
-cd bin
-cmake -G <generator> ..
+./setup.sh
 ```
-Vous pouvez utiliser (entre autres) les valeurs suivantes pour le `generator`:
-* `"CodeBlocks - Unix Makefiles"` pour un projet Code::Blocks sous Linux ;
-* `"Xcode"` pour un projet Xcode ;
-* `"Unix Makefiles"` pour des classiques Unix Makefiles.

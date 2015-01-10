@@ -2,7 +2,7 @@
 
 template<class T>
 inline bool contains(T x, std::vector<T> vec) {
-    for (T y : vec)
+    for (T &y : vec)
         if (x == y)
             return true;
     return false;
@@ -98,23 +98,22 @@ ChatMessage &ChatMessage::operator<<(Color color) {
         else if (this->color != color)
             next = new ChatMessage(this, color, styles);
     } else
-         *next << color;
+        *next << color;
     return *this;
 }
 
 string_t ChatMessage::getJSON() {
-    std::map<string_t, json11::Json> json = toJSON();
-
-    std::vector<std::map<string_t, json11::Json>> extra;
+    mongo::BSONObjBuilder obj;
+    obj.appendElements(toJSON());
+    mongo::BSONArrayBuilder extraObj;
     ChatMessage *next = this->next;
     while (next != nullptr) {
-        extra.push_back(next->toJSON());
+        extraObj.append(next->toJSON());
         next = next->next;
     }
-    if (!extra.empty())
-        json["extra"] = extra;
-
-    return json11::Json(json).dump();
+    if (extraObj.arrSize() > 0)
+        obj.appendArray("extra", extraObj.arr());
+    return obj.obj().jsonString();
 }
 
 string_t ChatMessage::getText() {
@@ -124,21 +123,17 @@ string_t ChatMessage::getText() {
 ChatMessage::ChatMessage(ChatMessage *prev, Color color, std::vector<Style> styles) :
     color(color), styles(styles), prev(prev), next(nullptr) {}
 
-std::map<string_t, json11::Json> ChatMessage::toJSON() {
-    std::map<string_t, json11::Json> json;
-
+mongo::BSONObj ChatMessage::toJSON() {
+    mongo::BSONObjBuilder obj;
     if (text.empty())
-        return json;
-    json["text"] = text;
-
+        return obj.obj();
+    obj.append("text", text);
     Color prevColor = prev == nullptr ? Color::WHITE : prev->color;
     if (color != prevColor)
-        json["color"] = color.getName();
-
+        obj.append("color", color.getName());
     std::vector<Style> prevStyles = (prev == nullptr) ? std::vector<Style>() : prev->styles;
     for (Style style : Style::values)
         if (contains<Style>(style, styles) != contains<Style>(style, prevStyles))
-            json[style.getName()] = (bool) contains<Style>(style, styles);
-
-    return json;
+            obj.append(style.getName(), (bool) contains<Style>(style, styles));
+    return obj.obj();
 }

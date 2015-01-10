@@ -4,7 +4,6 @@
 #include "ChatMessage.h"
 #include "CommandManager.h"
 #include "CommandSender.h"
-#include "ConfigManager.h"
 #include "Database.h"
 #include "NetworkManager.h"
 
@@ -14,15 +13,13 @@ class Proxy : public CommandSender {
 public:
     static Proxy *getProxy();
 
-    static ConfigManager *getConfig();
-
     static CommandManager *getCommands();
 
     static Database *getDatabase();
 
     static NetworkManager *getNetwork();
 
-    Proxy();
+    Proxy(ushort_t);
 
     virtual ~Proxy();
 
@@ -35,7 +32,6 @@ public:
 private:
     static Proxy *instance;
     CommandManager *commands;
-    ConfigManager *config;
     Database *database;
     NetworkManager *network;
     bool running;

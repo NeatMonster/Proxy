@@ -13,13 +13,11 @@ NetworkManager::~NetworkManager() {
         delete connect;
 }
 
-bool NetworkManager::start() {
-    string_t ip = Proxy::getConfig()->getProxyIP();
-    ushort_t port = Proxy::getConfig()->getProxyPort();
+bool NetworkManager::start(ushort_t port) {
     try {
-        socket = new ServerSocket(Socket::SocketAddress(ip, port));
+        socket = new ServerSocket(Socket::SocketAddress("0.0.0.0", port));
         socket->open();
-        Logger() << "Démarrage du proxy sur " << ip << ":" << port << std::endl;
+        Logger() << "Démarrage du proxy sur le port " << port << std::endl;
         running = true;
         thread = std::thread(&NetworkManager::run, this);
         return true;

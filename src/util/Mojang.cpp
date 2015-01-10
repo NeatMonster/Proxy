@@ -2,7 +2,7 @@
 
 #include "Encryption.h"
 
-#include "json11/json11.hpp"
+#include "mongo/bson/bson.h"
 #include "polarssl/ctr_drbg.h"
 #include "polarssl/ssl.h"
 #include "polarssl/x509.h"
@@ -126,23 +126,24 @@ bool Mojang::authentificate(Profile *user, string_t serverId, ubytes_t sharedSec
         string_t err;
         size_t start = resp.find("{");
         size_t end = resp.rfind("}");
-        string_t body = resp.substr(start, 1 + end - start);
-        json11::Json response = json11::Json::parse(body.data(), err);
-        string_t uuid = string_t(response["id"].string_value());
+        string_t reponse = resp.substr(start, 1 + end - start);
+        mongo::BSONObj responseObj(reponse.data());
+        string_t uuid = responseObj["id"].String();
         uuid.insert(uuid.begin() + 8, '-');
         uuid.insert(uuid.begin() + 13, '-');
         uuid.insert(uuid.begin() + 18, '-');
         uuid.insert(uuid.begin() + 23, '-');
         user->uuid = uuid;
-        user->name = string_t(response["name"].string_value());
+        user->name = responseObj["name"].String();
         user->properties.clear();
-        for (const json11::Json &element : response["properties"].array_items()) {
+        for (const mongo::BSONElement &element : responseObj["properties"].Array()) {
+            mongo::BSONObj elementObj = element.Obj();
             Profile::Property property;
-            property.name = string_t(element["name"].string_value());
-            property.value = string_t(element["value"].string_value());
-            if (element["signature"].is_string()) {
+            property.name = elementObj["name"].String();
+            property.value = elementObj["value"].String();
+            if (elementObj.hasElement("signature")) {
                 property.isSigned = true;
-                property.signature = string_t(element["signature"].string_value());
+                property.signature = elementObj["signature"].String();
             } else
                 property.isSigned = false;
             user->properties.push_back(property);

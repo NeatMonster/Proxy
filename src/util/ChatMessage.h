@@ -3,7 +3,7 @@
 
 #include "Types.h"
 
-#include "json11/json11.hpp"
+#include "mongo/bson/bson.h"
 
 class ChatMessage {
 public:
@@ -79,7 +79,7 @@ private:
 
     ChatMessage(ChatMessage*, Color, std::vector<Style>);
 
-    std::map<string_t, json11::Json> toJSON();
+    mongo::BSONObj toJSON();
 };
 
 typedef ChatMessage Chat;

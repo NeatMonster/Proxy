@@ -1,9 +1,3 @@
 bin/
-lib/boost/
-lib/libboost_filesystem.a
-lib/libboost_program_options.a
-lib/libboost_regex.a
-lib/libboost_system.a
-lib/libboost_thread.a
-lib/libmongoclient.a
-lib/mongo/
+include/
+lib/
