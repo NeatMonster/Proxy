@@ -8,7 +8,7 @@
 #include <thread>
 
 int main(int argc, char* argv[]) {
-    ushort_t port = 25566;
+    ushort_t port = 25565;
     for (int i = 1; i < argc; i++) {
         string_t arg = string_t(argv[i]);
         if (arg == "-h" || arg == "--help") {

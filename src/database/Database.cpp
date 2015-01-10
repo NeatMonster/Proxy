@@ -4,6 +4,8 @@
 
 #include "mongo/bson/bson.h"
 
+#include <stdexcept>
+
 Database::Database() {
     mongo::client::initialize();
 }
@@ -37,4 +39,22 @@ void Database::addProfile(Profile *profile) {
     profileObj.appendArray("properties", propertiesObj.obj());
     c.update("mf.profiles", BSON("_id" << profile->getUUID()), BSON("$set" << profileObj.obj()), true);
     std::cout << "Added profile" << std::endl;
+}
+
+std::pair<string_t, ushort_t> Database::getServer(mongo::OID _id) {
+    auto cursor = c.query("mf.servers", BSON("id_" << _id));
+    if (!cursor->more())
+        throw std::runtime_error("OID invalide");
+    mongo::BSONObj server = cursor->next();
+    return std::make_pair(server["host"].String(), server["port"].Number());
+}
+
+std::map<string_t, std::pair<string_t, ushort_t>> Database::getServers() {
+    std::map<string_t, std::pair<string_t, ushort_t>> servers;
+    auto cursor = c.query("mf.servers");
+    while (cursor->more()) {
+        mongo::BSONObj server = cursor->next();
+        servers[server["_id"].OID().toString()] = std::make_pair(server["host"].String(), server["port"].Number());
+    }
+    return servers;
 }

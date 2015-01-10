@@ -3,6 +3,7 @@
 #include "Encryption.h"
 
 #include "mongo/bson/bson.h"
+#include "mongo/db/json.h"
 #include "polarssl/ctr_drbg.h"
 #include "polarssl/ssl.h"
 #include "polarssl/x509.h"
@@ -126,8 +127,8 @@ bool Mojang::authentificate(Profile *user, string_t serverId, ubytes_t sharedSec
         string_t err;
         size_t start = resp.find("{");
         size_t end = resp.rfind("}");
-        string_t reponse = resp.substr(start, 1 + end - start);
-        mongo::BSONObj responseObj(reponse.data());
+        string_t response = resp.substr(start, 1 + end - start);
+        mongo::BSONObj responseObj = mongo::fromjson(response);
         string_t uuid = responseObj["id"].String();
         uuid.insert(uuid.begin() + 8, '-');
         uuid.insert(uuid.begin() + 13, '-');

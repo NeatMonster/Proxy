@@ -14,6 +14,10 @@ public:
 
     void addProfile(Profile*);
 
+    std::pair<string_t, ushort_t> getServer(mongo::OID);
+
+    std::map<string_t, std::pair<string_t, ushort_t>> getServers();
+
 private:
     mongo::DBClientConnection c;
 };

@@ -95,9 +95,8 @@ void PacketHandler::handleEncryptionResponse(PacketEncryptionResponse *packet) {
                 compressPacket->threshold = COMPRESSION_THRESHOLD;
                 connect->sendClient(compressPacket);
                 connect->compression = true;
-                //TODO Passer par le Mongo pour connaître le serveur par défaut
-                //connect->connect(Proxy::getConfig()->getServers()[Proxy::getConfig()->getDefaultServer()]);
-                connect->connect({"0.0.0.0", 25566});
+                //TODO Gérer le cas 'pas de serveur démarré'
+                connect->connect((*Proxy::getDatabase()->getServers().begin()).second);
             } else {
                 connect->disconnect("Impossible de vérifier le nom d'utilisateur !");
                 Logger(LogLevel::WARNING) << "'" << profile->getName() << "' a essayé de rejoindre avec une session invalide" << std::endl;
@@ -121,13 +120,13 @@ void PacketHandler::handleLoginSuccess(PacketLoginSuccess*) {
 }
 
 void PacketHandler::handlePluginMessage(PacketPluginMessage *packet) {
-    //TODO Passer par le Mongo pour connaître les serveurs
-    /*if (packet->channel == "MF|GetServers") {
+    if (packet->channel == "MF|GetServers") {
+        auto servers = Proxy::getDatabase()->getServers();
         PacketPluginMessage *pluginPacket = new PacketPluginMessage();
         pluginPacket->channel = packet->channel;
         PacketBuffer buffer;
-        buffer.putVarInt(Proxy::getConfig()->getServers().size());
-        for (auto server : Proxy::getConfig()->getServers())
+        buffer.putVarInt(servers.size());
+        for (auto server : servers)
             buffer.putString(server.first);
         pluginPacket->data = ubytes_t(buffer.getArray(), buffer.getArray() + buffer.getSize());
         connect->sendServer(pluginPacket);
@@ -137,13 +136,13 @@ void PacketHandler::handlePluginMessage(PacketPluginMessage *packet) {
         buffer.setPosition(0);
         string_t server;
         buffer.getString(server);
-        connect->connect(Proxy::getConfig()->getServers()[server]);
+        connect->connect(Proxy::getDatabase()->getServer(mongo::OID(server)));
     } else {
         PacketPluginMessage *pluginPacket = new PacketPluginMessage();
         pluginPacket->channel = packet->channel;
         pluginPacket->data = packet->data;
         connect->sendClient(pluginPacket);
-    }*/
+    }
 }
 
 void PacketHandler::handleJoinGame(PacketJoinGame *packet) {
